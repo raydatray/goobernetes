@@ -1,0 +1,38 @@
+Feature: Round Robin Load Balancing
+
+  As a system administrator,
+  I want the load balancer to distribute requests using the Round Robin strategy,
+  So that traffic is evenly distributed across available backend servers.
+
+  Background:
+    Given the load balancer is running
+    And there are 3 backend servers registered: "server1", "server2", "server3"
+    And all backend servers are healthy
+
+  Scenario: Normal Flow - Requests are evenly distributed
+    When a client makes 6 consecutive requests
+    Then the requests should be routed in this order:
+      | Request | Server  |
+      | 1       | server1 |
+      | 2       | server2 |
+      | 3       | server3 |
+      | 4       | server1 |
+      | 5       | server2 |
+      | 6       | server3 |
+
+  Scenario: Alternative Flow - One backend server goes down
+    Given "server2" becomes unavailable
+    When a client makes 6 consecutive requests
+    Then the requests should be routed in this order:
+      | Request | Server  |
+      | 1       | server1 |
+      | 2       | server3 |
+      | 3       | server1 |
+      | 4       | server3 |
+      | 5       | server1 |
+      | 6       | server3 |
+
+  Scenario: Error Flow - No backend servers available
+    Given all backend servers are unavailable
+    When a client makes a request
+    Then the load balancer should return a "503 Service Unavailable" response
