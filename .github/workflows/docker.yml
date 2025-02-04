@@ -8,7 +8,8 @@ on:
     branches: [ main ]
 
 jobs:
-  docker:
+  build:
+    name: Build Image
     runs-on: ubuntu-latest
     permissions:
       contents: read
