@@ -6,8 +6,11 @@ Feature: Round Robin Load Balancing
 
   Background:
     Given the load balancer is running
-    And there are 3 backend servers registered: "server1", "server2", "server3"
-    And all backend servers are healthy
+    And the following backend servers are configured:
+      | server_id | address        | port |
+      | server1   | 192.168.1.10   | 8080 |
+      | server2   | 192.168.1.11   | 8080 |
+      | server3   | 192.168.1.12   | 8080 |
 
   Scenario: Normal Flow - Requests are evenly distributed
     When a client makes 6 consecutive requests
