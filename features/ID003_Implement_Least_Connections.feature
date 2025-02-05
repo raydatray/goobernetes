@@ -6,10 +6,10 @@ Feature: Least Connections Load Balancing Algorithm
   Background:
     Given the load balancer is running
     And the following backend servers are configured:
-      | server_id | address        | port | max_connections |
-      | server1   | 192.168.1.10   | 8080 | 1000            |
-      | server2   | 192.168.1.11   | 8080 | 1000            |
-      | server3   | 192.168.1.12   | 8080 | 1000            |
+      | server_id | weight | address      | port | max_connections |
+      | server1   | 1      | 192.168.1.10 | 8080 | 1000            |
+      | server2   | 1      | 192.168.1.11 | 8080 | 1000            |
+      | server3   | 1      | 192.168.1.12 | 8080 | 1000            |
 
   Scenario: Select server with least active connections
     Given the backend servers have the following active connections:

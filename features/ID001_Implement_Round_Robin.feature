@@ -7,15 +7,15 @@ Feature: Round Robin Load Balancing
   Background:
     Given the load balancer is running
     And the following backend servers are configured:
-      | server_id | address        | port |
-      | server1   | 192.168.1.10   | 8080 |
-      | server2   | 192.168.1.11   | 8080 |
-      | server3   | 192.168.1.12   | 8080 |
+      | server_id | weight | address      | port | max_connections |
+      | server1   | 1      | 192.168.1.10 | 8080 | 1000            |
+      | server2   | 1      | 192.168.1.11 | 8080 | 1000            |
+      | server3   | 1      | 192.168.1.12 | 8080 | 1000            |
 
   Scenario: Normal Flow - Requests are evenly distributed
     When a client makes 6 consecutive requests
     Then the requests should be routed in this order:
-      | Request | Server  |
+      | request | server  |
       | 1       | server1 |
       | 2       | server2 |
       | 3       | server3 |
@@ -27,7 +27,7 @@ Feature: Round Robin Load Balancing
     Given "server2" becomes unavailable
     When a client makes 6 consecutive requests
     Then the requests should be routed in this order:
-      | Request | Server  |
+      | request | server  |
       | 1       | server1 |
       | 2       | server3 |
       | 3       | server1 |

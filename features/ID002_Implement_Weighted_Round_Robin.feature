@@ -6,17 +6,16 @@ Feature: Weighted Round Robin Load Balancing
 
   Background:
     Given the load balancer is running
-    And the following backend servers are registered with weights:
-      | Server  | Weight |
-      | server1 | 3      |
-      | server2 | 1      |
-      | server3 | 2      |
-    And all backend servers are healthy
+    And the following backend servers are configured:
+      | server_id | weight | address      | port | max_connections |
+      | server1   | 3      | 192.168.1.10 | 8080 | 1000            |
+      | server2   | 1      | 192.168.1.11 | 8080 | 1000            |
+      | server3   | 2      | 192.168.1.12 | 8080 | 1000            |
 
   Scenario: Normal Flow - Requests are distributed based on weights
     When a client makes 6 consecutive requests
     Then the requests should be routed in this order:
-      | Request | Server  |
+      | request | server  |
       | 1       | server1 |
       | 2       | server1 |
       | 3       | server1 |
@@ -28,7 +27,7 @@ Feature: Weighted Round Robin Load Balancing
     Given "server1" becomes unavailable
     When a client makes 6 consecutive requests
     Then the requests should be routed in this order:
-      | Request | Server  |
+      | request | server  |
       | 1       | server2 |
       | 2       | server3 |
       | 3       | server3 |
