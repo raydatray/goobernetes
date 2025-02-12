@@ -64,7 +64,7 @@ func (t *roundRobinTest) theRequestsShouldBeRoutedInThisOrder(table *godog.Table
 	}
 
 	for i, row := range table.Rows[1:] { // skip first row
-		expectedServerID := row.Cells[0].Value
+		expectedServerID := row.Cells[1].Value
 		receivedServerID := t.requests[i].ID
 		if expectedServerID != receivedServerID {
 			return fmt.Errorf("request %d: expected %s but got %s", i, expectedServerID, receivedServerID)
@@ -112,7 +112,7 @@ func intializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the load balancer is running$`, test.theLoadBalancerIsRunning)
 	ctx.Step(`^the following backend servers are configured:$`, test.theFollowingBackendServersAreConfigured)
 	ctx.Step(`^a client makes (\d+) consecutive requests$`, test.aClientMakesConsecutiveRequests)
-	ctx.Step(`^the requests should be routed in this order$`, test.theRequestsShouldBeRoutedInThisOrder)
+	ctx.Step(`^the requests should be routed in this order:$`, test.theRequestsShouldBeRoutedInThisOrder)
 	ctx.Step(`^"([^"]*)" becomes unavailable$`, test.serverBecomesUnavailable)
 	ctx.Step(`^all backend servers are unavailable$`, test.allBackendServersAreUnavailable)
 	ctx.Step(`^a client makes a request$`, test.aClientMakesARequest)
