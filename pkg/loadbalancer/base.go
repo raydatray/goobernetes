@@ -3,8 +3,6 @@ package loadbalancer
 import (
 	"errors"
 	"sync"
-
-	"github.com/raydatray/goobernetes/pkg/server"
 )
 
 var (
@@ -14,17 +12,17 @@ var (
 )
 
 type BaseLoadBalancer struct {
-	servers []*server.ServerInstance
+	servers []*ServerInstance
 	mutex   sync.RWMutex
 }
 
 func NewBaseLoadBalancer() BaseLoadBalancer {
 	return BaseLoadBalancer{
-		servers: make([]*server.ServerInstance, 0),
+		servers: make([]*ServerInstance, 0),
 	}
 }
 
-func (b *BaseLoadBalancer) AddServer(server *server.ServerInstance) error {
+func (b *BaseLoadBalancer) AddServer(server *ServerInstance) error {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -52,11 +50,11 @@ func (b *BaseLoadBalancer) RemoveServer(serverID string) error {
 	return ErrServerNotFound
 }
 
-func (b *BaseLoadBalancer) GetServers() []*server.ServerInstance {
+func (b *BaseLoadBalancer) GetServers() []*ServerInstance {
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
 
-	serversCopy := make([]*server.ServerInstance, len(b.servers))
+	serversCopy := make([]*ServerInstance, len(b.servers))
 	copy(serversCopy, b.servers)
 	return serversCopy
 }

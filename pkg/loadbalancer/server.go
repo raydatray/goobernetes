@@ -1,4 +1,4 @@
-package server
+package loadbalancer
 
 type ServerInstance struct {
 	ID     string
