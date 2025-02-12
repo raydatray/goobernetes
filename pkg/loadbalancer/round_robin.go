@@ -1,9 +1,5 @@
 package loadbalancer
 
-import (
-	"github.com/raydatray/goobernetes/pkg/server"
-)
-
 type RoundRobinLoadBalancer struct {
 	BaseLoadBalancer
 	current int
@@ -18,7 +14,7 @@ func NewRoundRobinLoadBalancer() LoadBalancer {
 	}
 }
 
-func (rr *RoundRobinLoadBalancer) NextServer() (*server.ServerInstance, error) {
+func (rr *RoundRobinLoadBalancer) NextServer() (*ServerInstance, error) {
 	rr.mutex.Lock()
 	defer rr.mutex.Unlock()
 

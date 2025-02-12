@@ -7,18 +7,17 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/raydatray/goobernetes/pkg/loadbalancer"
-	"github.com/raydatray/goobernetes/pkg/server"
 )
 
 type roundRobinTest struct {
 	lb        loadbalancer.LoadBalancer
-	requests  []*server.ServerInstance
+	requests  []*loadbalancer.ServerInstance
 	lastError error
 }
 
 func (t *roundRobinTest) reset() {
 	t.lb = loadbalancer.NewRoundRobinLoadBalancer()
-	t.requests = make([]*server.ServerInstance, 0)
+	t.requests = make([]*loadbalancer.ServerInstance, 0)
 	t.lastError = nil
 }
 
@@ -32,7 +31,7 @@ func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Ta
 		serverID := row.Cells[0].Value
 		host := row.Cells[2].Value
 		port := row.Cells[3].Value
-		server := &server.ServerInstance{
+		server := &loadbalancer.ServerInstance{
 			ID:     serverID,
 			Host:   host,
 			Port:   port,
@@ -46,7 +45,7 @@ func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Ta
 }
 
 func (t *roundRobinTest) aClientMakesConsecutiveRequests(requestCount int) error {
-	t.requests = make([]*server.ServerInstance, 0)
+	t.requests = make([]*loadbalancer.ServerInstance, 0)
 	for i := 0; i < requestCount; i++ {
 		server, err := t.lb.NextServer()
 		if err != nil {
