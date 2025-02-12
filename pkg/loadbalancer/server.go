@@ -3,6 +3,6 @@ package loadbalancer
 type ServerInstance struct {
 	ID     string
 	Host   string
-	Port   string
+	Port   int
 	Active bool
 }
