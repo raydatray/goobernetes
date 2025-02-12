@@ -4,10 +4,11 @@ go 1.23.6
 
 require (
 	github.com/cucumber/godog v0.15.0
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.1
 )
 
 require (
+	github.com/cucumber/godog v0.15.0 // indirect
 	github.com/cucumber/gherkin/go/v26 v26.2.0 // indirect
 	github.com/cucumber/messages/go/v21 v21.0.1 // indirect
 	github.com/gofrs/uuid v4.3.1+incompatible // indirect
