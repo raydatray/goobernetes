@@ -31,6 +31,7 @@ func (r *Router) ServeRequest(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
+	defer server.ReleaseConnection()
 
 	targetURL := &url.URL{
 		Scheme: "http",

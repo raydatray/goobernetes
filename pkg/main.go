@@ -32,9 +32,8 @@ func main() {
 			lb := loadbalancer.NewRoundRobinLoadBalancer()
 
 			defaultBackends := []*loadbalancer.ServerInstance{
-				{ID: "server1", Host: "localhost", Port: 8081, Active: true},
-				{ID: "server2", Host: "localhost", Port: 8082, Active: true},
-				{ID: "server3", Host: "localhost", Port: 8083, Active: true},
+				loadbalancer.NewServerInstance("server1", "backend1", 8081, 5),
+				loadbalancer.NewServerInstance("server2", "backend2", 8082, 5),
 			}
 
 			for _, backend := range defaultBackends {
@@ -68,7 +67,6 @@ func main() {
 		},
 	}
 
-	// Backend server command
 	backendCmd := &cobra.Command{
 		Use:   "backend",
 		Short: "start a mock backend server instance",

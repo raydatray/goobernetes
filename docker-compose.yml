@@ -1,0 +1,40 @@
+services:
+  loadbalancer:
+    build: .
+    ports:
+      - "8080:8080"
+    command: ["./goobernetes", "lb", "--port", "8080"]
+    networks:
+      - goobernet
+
+  backend1:
+    build: .
+    command: ["./goobernetes", "backend", "--port", "8081"]
+    expose:
+      - "8081"
+    networks:
+      - goobernet
+
+  backend2:
+    build: .
+    command: ["./goobernetes", "backend", "--port", "8082"]
+    expose:
+      - "8082"
+    networks:
+      - goobernet
+
+  benchmarker:
+    image: httpd:alpine
+    depends_on:
+      - loadbalancer
+    networks:
+      - goobernet
+    command: >
+      /bin/sh -c "
+      sleep 5 &&
+      apk add --no-cache apache2-utils &&
+      ab -n 10000 -c 10 -v 2 http://loadbalancer:8080/"
+
+networks:
+  goobernet:
+    driver: bridge

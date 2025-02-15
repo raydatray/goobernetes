@@ -25,9 +25,11 @@ func (rr *RoundRobinLoadBalancer) NextServer() (*ServerInstance, error) {
 	startIndex := rr.current
 	for i := 0; i < len(rr.servers); i++ {
 		currentIndex := (startIndex + i) % len(rr.servers)
-		if rr.servers[currentIndex].Active {
+		server := rr.servers[currentIndex]
+
+		if server.Active && server.AcquireConnection() {
 			rr.current = (currentIndex + 1) % len(rr.servers)
-			return rr.servers[currentIndex], nil
+			return server, nil
 		}
 	}
 
