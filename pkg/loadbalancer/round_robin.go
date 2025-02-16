@@ -5,7 +5,7 @@ type RoundRobinLoadBalancer struct {
 	current int
 }
 
-var _ LoadBalancer = (*RoundRobinLoadBalancer)(nil) //Compile time interface check
+var _ LoadBalancer = (*RoundRobinLoadBalancer)(nil) // Compile time interface check
 
 func NewRoundRobinLoadBalancer() LoadBalancer {
 	return &RoundRobinLoadBalancer{

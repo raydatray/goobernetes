@@ -9,6 +9,7 @@ var (
 	ErrServerAlreadyExists = errors.New("server alrady exists")
 	ErrServerNotFound      = errors.New("server not found")
 	ErrNoServerAvailable   = errors.New("no server available")
+	ErrServerNotAvailable  = errors.New("a server is unavailable")
 )
 
 type BaseLoadBalancer struct {

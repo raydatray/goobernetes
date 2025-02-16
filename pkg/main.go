@@ -32,9 +32,9 @@ func main() {
 			lb := loadbalancer.NewRoundRobinLoadBalancer()
 
 			defaultBackends := []*loadbalancer.ServerInstance{
-				{ID: "server1", Host: "localhost", Port: 8081, Active: true},
-				{ID: "server2", Host: "localhost", Port: 8082, Active: true},
-				{ID: "server3", Host: "localhost", Port: 8083, Active: true},
+				{ID: "server1", Host: "localhost", Port: "8081", Active: true},
+				{ID: "server2", Host: "localhost", Port: "8082", Active: true},
+				{ID: "server3", Host: "localhost", Port: "8083", Active: true},
 			}
 
 			for _, backend := range defaultBackends {

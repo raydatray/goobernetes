@@ -3,36 +3,39 @@ package tests
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/cucumber/godog"
 	"github.com/raydatray/goobernetes/pkg/loadbalancer"
 )
 
-type roundRobinTest struct {
+type weightedRoundRobinTest struct {
 	lb        loadbalancer.LoadBalancer
 	requests  []*loadbalancer.ServerInstance
 	lastError error
 }
 
-func (t *roundRobinTest) reset() {
-	t.lb = loadbalancer.NewRoundRobinLoadBalancer()
+func (t *weightedRoundRobinTest) reset() {
+	t.lb = loadbalancer.NewWeightedRoundRobinLoadBalancer()
 	t.requests = make([]*loadbalancer.ServerInstance, 0)
 	t.lastError = nil
 }
 
-func (t *roundRobinTest) theLoadBalancerIsRunning() error {
+func (t *weightedRoundRobinTest) theLoadBalancerIsRunning() error {
 	t.reset()
 	return nil
 }
 
-func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Table) error {
+func (t *weightedRoundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Table) error {
 	for _, row := range table.Rows[1:] {
 		serverID := row.Cells[0].Value
+		weight, _ := strconv.Atoi(row.Cells[1].Value)
 		host := row.Cells[2].Value
 		port := row.Cells[3].Value
 		server := &loadbalancer.ServerInstance{
 			ID:     serverID,
+			Weight: weight,
 			Host:   host,
 			Port:   port,
 			Active: true,
@@ -44,18 +47,17 @@ func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Ta
 	return nil
 }
 
-func (t *roundRobinTest) allBackendServersAreHealthy() error {
+func (t *weightedRoundRobinTest) allBackendServersAreHealthy() error {
 	for _, server := range t.lb.GetServers() {
 		if !server.Active {
 			t.lastError = loadbalancer.ErrServerNotAvailable
 			return loadbalancer.ErrServerNotAvailable
 		}
 	}
-
 	return nil
 }
 
-func (t *roundRobinTest) aClientMakesConsecutiveRequests(requestCount int) error {
+func (t *weightedRoundRobinTest) aClientMakesConsecutiveRequests(requestCount int) error {
 	t.requests = make([]*loadbalancer.ServerInstance, 0)
 	for i := 0; i < requestCount; i++ {
 		server, err := t.lb.NextServer()
@@ -68,12 +70,11 @@ func (t *roundRobinTest) aClientMakesConsecutiveRequests(requestCount int) error
 	return nil
 }
 
-func (t *roundRobinTest) theRequestsShouldBeRoutedInThisOrder(table *godog.Table) error {
+func (t *weightedRoundRobinTest) theRequestsShouldBeRoutedInThisOrder(table *godog.Table) error {
 	if len(t.requests) != len(table.Rows)-1 {
 		return fmt.Errorf("expected %d requests but got %d requests", len(table.Rows)-1, len(t.requests))
 	}
-
-	for i, row := range table.Rows[1:] { // skip first row
+	for i, row := range table.Rows[1:] {
 		expectedServerID := row.Cells[1].Value
 		receivedServerID := t.requests[i].ID
 		if expectedServerID != receivedServerID {
@@ -83,36 +84,37 @@ func (t *roundRobinTest) theRequestsShouldBeRoutedInThisOrder(table *godog.Table
 	return nil
 }
 
-func (t *roundRobinTest) serverBecomesUnavailable(serverID string) error {
-	t.lb.SetServerStatus(serverID, false)
-	return nil
+func (t *weightedRoundRobinTest) serverBecomesUnavailable(serverID string) error {
+	err := t.lb.SetServerStatus(serverID, false)
+	t.lastError = err
+	return err
 }
 
-func (t *roundRobinTest) allBackendServersAreUnavailable() error {
-	servers := t.lb.GetServers()
-	for _, server := range servers {
+func (t *weightedRoundRobinTest) allBackendServersAreUnavailable() error {
+	for _, server := range t.lb.GetServers() {
 		if err := t.lb.SetServerStatus(server.ID, false); err != nil {
+			t.lastError = err
 			return err
 		}
 	}
 	return nil
 }
 
-func (t *roundRobinTest) aClientMakesARequest() error {
+func (t *weightedRoundRobinTest) aClientMakesARequest() error {
 	_, err := t.lb.NextServer()
 	t.lastError = err
 	return nil
 }
 
-func (t *roundRobinTest) theLoadBalancerShouldReturnAServiceUnavailableResponse() error {
+func (t *weightedRoundRobinTest) theLoadBalancerShouldReturnAServiceUnavailableResponse() error {
 	if t.lastError != loadbalancer.ErrNoServerAvailable {
 		return fmt.Errorf("expected ErrNoServerAvailable but got %v", t.lastError)
 	}
 	return nil
 }
 
-func intializeID001Scenario(ctx *godog.ScenarioContext) {
-	test := &roundRobinTest{}
+func initializeID002Scenario(ctx *godog.ScenarioContext) {
+	test := &weightedRoundRobinTest{}
 
 	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
 		test.reset()
@@ -130,17 +132,17 @@ func intializeID001Scenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the load balancer should return a "503 Service Unavailable" response$`, test.theLoadBalancerShouldReturnAServiceUnavailableResponse)
 }
 
-func TestID001(t *testing.T) {
+func TestID002(t *testing.T) {
 	suite := godog.TestSuite{
-		ScenarioInitializer: intializeID001Scenario,
+		ScenarioInitializer: initializeID002Scenario,
 		Options: &godog.Options{
 			Format:    "pretty",
-			Paths:     []string{"../features/ID001_Implement_Round_Robin.feature"},
+			Paths:     []string{"../features/ID002_Implement_Weighted_Round_Robin.feature"},
 			Randomize: 0,
 		},
 	}
 
 	if suite.Run() != 0 {
-		t.Fatal("ID001 test failure")
+		t.Fatal("ID002 test failure")
 	}
 }
