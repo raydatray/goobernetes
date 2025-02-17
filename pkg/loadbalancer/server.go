@@ -1,8 +1,53 @@
 package loadbalancer
 
+import "fmt"
+
+type Server interface {
+	GetHostPort() string
+	AcquireConnection() bool
+	ReleaseConnection()
+}
+
 type ServerInstance struct {
-	ID     string
-	Host   string
-	Port   int
-	Active bool
+	ID          string
+	Host        string
+	Port        int
+	Active      bool
+	MaxConns    int
+	connections chan struct{}
+}
+
+var _ Server = (*ServerInstance)(nil)
+
+func NewServerInstance(id string, host string, port int, maxConns int) *ServerInstance {
+	return &ServerInstance{
+		ID:          id,
+		Host:        host,
+		Port:        port,
+		Active:      true,
+		MaxConns:    maxConns,
+		connections: make(chan struct{}, maxConns),
+	}
+}
+
+func (s *ServerInstance) GetHostPort() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
+}
+
+func (s *ServerInstance) AcquireConnection() bool {
+	success := false
+	select {
+	case s.connections <- struct{}{}:
+		success = true
+	default:
+		success = false
+	}
+	return success
+}
+
+func (s *ServerInstance) ReleaseConnection() {
+	select {
+	case <-s.connections:
+	default:
+	}
 }

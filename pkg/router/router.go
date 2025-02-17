@@ -31,10 +31,11 @@ func (r *Router) ServeRequest(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
+	defer server.ReleaseConnection()
 
 	targetURL := &url.URL{
 		Scheme: "http",
-		Host:   fmt.Sprintf("%s:%d", server.Host, server.Port),
+		Host:   fmt.Sprintf("%s", server.GetHostPort()),
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
