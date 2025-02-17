@@ -1,13 +1,6 @@
 package loadbalancer
 
 type ServerInstance struct {
-<<<<<<< HEAD
-	ID     string
-	Host   string
-	Port   string
-	Weight int
-	Active bool
-=======
 	ID          string
 	Host        string
 	Port        int
@@ -45,5 +38,4 @@ func (s *ServerInstance) ReleaseConnection() {
 	case <-s.connections:
 	default:
 	}
->>>>>>> 06a8271 (add max connections per backend)
 }
