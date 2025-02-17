@@ -42,6 +42,31 @@ func (wrr *WeightedRoundRobinLoadBalancer) AddServer(server Server) error {
 	return nil
 }
 
+func (wrr *WeightedRoundRobinLoadBalancer) GetServers() []Server {
+	wrr.RLock()
+	defer wrr.RUnlock()
+
+	serversCopy := make([]Server, 0, len(wrr.servers))
+	for _, s := range wrr.servers {
+		serversCopy = append(serversCopy, s.(*WeightedServerInstance))
+	}
+
+	return serversCopy
+}
+
+func (wrr *WeightedRoundRobinLoadBalancer) SetServerStatus(serverID string, active bool) error {
+	wrr.Lock()
+	defer wrr.Unlock()
+
+	for _, s := range wrr.servers {
+		if s.(*WeightedServerInstance).ID == serverID {
+			s.(*WeightedServerInstance).Active = active
+			return nil
+		}
+	}
+	return ErrServerNotFound
+}
+
 func (wrr *WeightedRoundRobinLoadBalancer) NextServer() (Server, error) {
 	wrr.Lock()
 	defer wrr.Unlock()
@@ -54,7 +79,7 @@ func (wrr *WeightedRoundRobinLoadBalancer) NextServer() (Server, error) {
 		server := wrr.servers[wrr.current].(*WeightedServerInstance)
 		fmt.Printf("%#v\n", server)
 		if server.Active {
-			if wrr.delivered < server.GetWeight() {
+			if wrr.delivered < server.Weight {
 				wrr.delivered++
 				return server, nil
 			}
@@ -67,10 +92,6 @@ func (wrr *WeightedRoundRobinLoadBalancer) NextServer() (Server, error) {
 }
 
 var _ Server = (*WeightedServerInstance)(nil)
-
-func (ws *WeightedServerInstance) GetWeight() int {
-	return ws.Weight
-}
 
 func NewWeightedServerInstance(id string, host string, port int, maxConns int, weight int) *WeightedServerInstance {
 	return &WeightedServerInstance{

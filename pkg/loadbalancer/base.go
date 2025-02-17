@@ -21,6 +21,7 @@ type BaseLoadBalancer struct {
 func NewBaseLoadBalancer() BaseLoadBalancer {
 	return BaseLoadBalancer{
 		servers: make([]Server, 0),
+		RWMutex: &sync.RWMutex{},
 	}
 }
 
@@ -62,7 +63,9 @@ func (b *BaseLoadBalancer) GetServers() []Server {
 	defer b.RUnlock()
 
 	serversCopy := make([]Server, 0, len(b.servers))
-	copy(serversCopy, b.servers)
+	for _, s := range b.servers {
+		serversCopy = append(serversCopy, s.(*ServerInstance))
+	}
 
 	return serversCopy
 }
