@@ -1,12 +1,9 @@
 package loadbalancer
 
+import "fmt"
+
 type Server interface {
-	GetID() string
-	GetHost() string
-	GetPort() int
-	GetActive() bool
-	GetMaxConns() int
-	GetConnections() chan struct{}
+	GetHostPort() string
 	AcquireConnection() bool
 	ReleaseConnection()
 }
@@ -33,28 +30,8 @@ func NewServerInstance(id string, host string, port int, maxConns int) *ServerIn
 	}
 }
 
-func (s *ServerInstance) GetID() string {
-	return s.ID
-}
-
-func (s *ServerInstance) GetHost() string {
-	return s.Host
-}
-
-func (s *ServerInstance) GetPort() int {
-	return s.Port
-}
-
-func (s *ServerInstance) GetActive() bool {
-	return s.Active
-}
-
-func (s *ServerInstance) GetMaxConns() int {
-	return s.MaxConns
-}
-
-func (s *ServerInstance) GetConnections() chan struct{} {
-	return s.connections
+func (s *ServerInstance) GetHostPort() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }
 
 func (s *ServerInstance) AcquireConnection() bool {

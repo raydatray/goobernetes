@@ -53,7 +53,7 @@ func (wrr *WeightedRoundRobinLoadBalancer) NextServer() (Server, error) {
 	for i := 0; i < len(wrr.servers); i++ {
 		server := wrr.servers[wrr.current].(*WeightedServerInstance)
 		fmt.Printf("%#v\n", server)
-		if server.GetActive() {
+		if server.Active {
 			if wrr.delivered < server.GetWeight() {
 				wrr.delivered++
 				return server, nil
