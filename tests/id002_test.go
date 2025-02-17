@@ -32,7 +32,7 @@ func (t *weightedRoundRobinTest) theFollowingBackendServersAreConfigured(table *
 		serverID := row.Cells[0].Value
 		weight, _ := strconv.Atoi(row.Cells[1].Value)
 		host := row.Cells[2].Value
-		port := row.Cells[3].Value
+		port, _ := strconv.Atoi(row.Cells[3].Value)
 		server := &loadbalancer.ServerInstance{
 			ID:     serverID,
 			Weight: weight,

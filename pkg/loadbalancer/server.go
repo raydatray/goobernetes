@@ -14,9 +14,10 @@ type ServerInstance struct {
 	Active      bool
 	MaxConns    int
 	connections chan struct{}
+	Weight      int
 }
 
-func NewServerInstance(id string, host string, port int, maxConns int) *ServerInstance {
+func NewServerInstance(id string, host string, port int, maxConns int, weight int) *ServerInstance {
 	return &ServerInstance{
 		ID:          id,
 		Host:        host,
@@ -24,6 +25,7 @@ func NewServerInstance(id string, host string, port int, maxConns int) *ServerIn
 		Active:      true,
 		MaxConns:    maxConns,
 		connections: make(chan struct{}, maxConns),
+		Weight:      weight,
 	}
 }
 

@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/cucumber/godog"
@@ -30,7 +31,7 @@ func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Ta
 	for _, row := range table.Rows[1:] {
 		serverID := row.Cells[0].Value
 		host := row.Cells[2].Value
-		port := row.Cells[3].Value
+		port, _ := strconv.Atoi(row.Cells[3].Value)
 		server := &loadbalancer.ServerInstance{
 			ID:     serverID,
 			Host:   host,

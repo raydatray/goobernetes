@@ -23,6 +23,14 @@ services:
     networks:
       - goobernet
 
+  backend3:
+    build: .
+    command: ["./goobernetes", "backend", "--port", "8083"]
+    expose:
+      - "8083"
+    networks:
+      - goobernet
+
   benchmarker:
     image: httpd:alpine
     depends_on:
