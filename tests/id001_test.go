@@ -30,11 +30,10 @@ func (t *roundRobinTest) theLoadBalancerIsRunning() error {
 func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Table) error {
 	for _, row := range table.Rows[1:] {
 		serverID := row.Cells[0].Value
-		weight, _ := strconv.Atoi(row.Cells[1].Value)
 		host := row.Cells[2].Value
 		port, _ := strconv.Atoi(row.Cells[3].Value)
 		maxConn, _ := strconv.Atoi(row.Cells[4].Value)
-		server := loadbalancer.NewServerInstance(serverID, host, port, maxConn, weight)
+		server := loadbalancer.NewServerInstance(serverID, host, port, maxConn)
 		if err := t.lb.AddServer(server); err != nil {
 			return fmt.Errorf("failed to add server: %v", err)
 		}

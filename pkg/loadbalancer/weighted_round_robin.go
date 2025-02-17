@@ -1,5 +1,7 @@
 package loadbalancer
 
+import "fmt"
+
 type WeightedRoundRobinLoadBalancer struct {
 	BaseLoadBalancer
 	current   int
@@ -26,6 +28,7 @@ func (wrr *WeightedRoundRobinLoadBalancer) NextServer() (*ServerInstance, error)
 
 	for i := 0; i < len(wrr.servers); i++ {
 		server := wrr.servers[wrr.current]
+		fmt.Printf("%#v\n", server)
 		if server.Active {
 			if wrr.delivered < server.Weight {
 				wrr.delivered++

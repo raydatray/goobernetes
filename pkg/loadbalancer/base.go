@@ -23,7 +23,7 @@ func NewBaseLoadBalancer() BaseLoadBalancer {
 	}
 }
 
-func (b *BaseLoadBalancer) AddServer(server *ServerInstance) error {
+func (b *BaseLoadBalancer) AddServer(server *ServerInstance, opts ...Option) error {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -31,6 +31,10 @@ func (b *BaseLoadBalancer) AddServer(server *ServerInstance) error {
 		if s.ID == server.ID {
 			return ErrServerAlreadyExists
 		}
+	}
+
+	for _, opt := range opts {
+		opt(server)
 	}
 
 	b.servers = append(b.servers, server)
@@ -71,4 +75,10 @@ func (b *BaseLoadBalancer) SetServerStatus(serverID string, active bool) error {
 		}
 	}
 	return ErrServerNotFound
+}
+
+func WithWeight(w int) Option {
+	return func(s *ServerInstance) {
+		s.Weight = w
+	}
 }

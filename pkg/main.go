@@ -32,13 +32,15 @@ func main() {
 			lb := loadbalancer.NewWeightedRoundRobinLoadBalancer()
 
 			defaultBackends := []*loadbalancer.ServerInstance{
-				loadbalancer.NewServerInstance("server1", "backend1", 8081, 5, 3),
-				loadbalancer.NewServerInstance("server2", "backend2", 8082, 5, 1),
-				loadbalancer.NewServerInstance("server3", "backend3", 8083, 5, 2),
+				loadbalancer.NewServerInstance("server1", "backend1", 8081, 5),
+				loadbalancer.NewServerInstance("server2", "backend2", 8082, 5),
+				loadbalancer.NewServerInstance("server3", "backend3", 8083, 5),
 			}
 
-			for _, backend := range defaultBackends {
-				if err := lb.AddServer(backend); err != nil {
+			defaultWeights := []int{3, 1, 2}
+
+			for i, backend := range defaultBackends {
+				if err := lb.AddServer(backend, loadbalancer.WithWeight(defaultWeights[i])); err != nil {
 					log.Printf("warning: failed to add backend server: %v", err)
 				}
 			}

@@ -10,7 +10,9 @@ type ServerInstance struct {
 	Weight      int
 }
 
-func NewServerInstance(id string, host string, port int, maxConns int, weight int) *ServerInstance {
+type Option func(*ServerInstance)
+
+func NewServerInstance(id string, host string, port int, maxConns int) *ServerInstance {
 	return &ServerInstance{
 		ID:          id,
 		Host:        host,
@@ -18,7 +20,6 @@ func NewServerInstance(id string, host string, port int, maxConns int, weight in
 		Active:      true,
 		MaxConns:    maxConns,
 		connections: make(chan struct{}, maxConns),
-		Weight:      weight,
 	}
 }
 
