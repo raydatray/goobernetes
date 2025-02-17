@@ -43,7 +43,7 @@ func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Ta
 
 func (t *roundRobinTest) allBackendServersAreHealthy() error {
 	for _, server := range t.lb.GetServers() {
-		if !server.Active {
+		if !server.(*loadbalancer.ServerInstance).Active {
 			t.lastError = loadbalancer.ErrServerNotAvailable
 			return loadbalancer.ErrServerNotAvailable
 		}
@@ -60,7 +60,7 @@ func (t *roundRobinTest) aClientMakesConsecutiveRequests(requestCount int) error
 			t.lastError = err
 			return err
 		}
-		t.requests = append(t.requests, server)
+		t.requests = append(t.requests, server.(*loadbalancer.ServerInstance))
 	}
 	return nil
 }
@@ -88,7 +88,7 @@ func (t *roundRobinTest) serverBecomesUnavailable(serverID string) error {
 func (t *roundRobinTest) allBackendServersAreUnavailable() error {
 	servers := t.lb.GetServers()
 	for _, server := range servers {
-		if err := t.lb.SetServerStatus(server.ID, false); err != nil {
+		if err := t.lb.SetServerStatus(server.(*loadbalancer.ServerInstance).ID, false); err != nil {
 			return err
 		}
 	}

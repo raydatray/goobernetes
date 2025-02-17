@@ -12,13 +12,13 @@ import (
 
 type weightedRoundRobinTest struct {
 	lb        loadbalancer.LoadBalancer
-	requests  []*loadbalancer.ServerInstance
+	requests  []*loadbalancer.WeightedServerInstance
 	lastError error
 }
 
 func (t *weightedRoundRobinTest) reset() {
 	t.lb = loadbalancer.NewWeightedRoundRobinLoadBalancer()
-	t.requests = make([]*loadbalancer.ServerInstance, 0)
+	t.requests = make([]*loadbalancer.WeightedServerInstance, 0)
 	t.lastError = nil
 }
 
@@ -34,8 +34,8 @@ func (t *weightedRoundRobinTest) theFollowingBackendServersAreConfigured(table *
 		host := row.Cells[2].Value
 		port, _ := strconv.Atoi(row.Cells[3].Value)
 		maxConn, _ := strconv.Atoi(row.Cells[4].Value)
-		server := loadbalancer.NewServerInstance(serverID, host, port, maxConn)
-		if err := t.lb.AddServer(server, loadbalancer.WithWeight(weight)); err != nil {
+		server := loadbalancer.NewWeightedServerInstance(serverID, host, port, maxConn, weight)
+		if err := t.lb.AddServer(server); err != nil {
 			return fmt.Errorf("failed to add server: %v", err)
 		}
 	}
@@ -44,7 +44,7 @@ func (t *weightedRoundRobinTest) theFollowingBackendServersAreConfigured(table *
 
 func (t *weightedRoundRobinTest) allBackendServersAreHealthy() error {
 	for _, server := range t.lb.GetServers() {
-		if !server.Active {
+		if !server.(*loadbalancer.WeightedServerInstance).Active {
 			t.lastError = loadbalancer.ErrServerNotAvailable
 			return loadbalancer.ErrServerNotAvailable
 		}
@@ -53,14 +53,14 @@ func (t *weightedRoundRobinTest) allBackendServersAreHealthy() error {
 }
 
 func (t *weightedRoundRobinTest) aClientMakesConsecutiveRequests(requestCount int) error {
-	t.requests = make([]*loadbalancer.ServerInstance, 0)
+	t.requests = make([]*loadbalancer.WeightedServerInstance, 0)
 	for i := 0; i < requestCount; i++ {
 		server, err := t.lb.NextServer()
 		if err != nil {
 			t.lastError = err
 			return err
 		}
-		t.requests = append(t.requests, server)
+		t.requests = append(t.requests, server.(*loadbalancer.WeightedServerInstance))
 	}
 	return nil
 }
@@ -87,7 +87,7 @@ func (t *weightedRoundRobinTest) serverBecomesUnavailable(serverID string) error
 
 func (t *weightedRoundRobinTest) allBackendServersAreUnavailable() error {
 	for _, server := range t.lb.GetServers() {
-		if err := t.lb.SetServerStatus(server.ID, false); err != nil {
+		if err := t.lb.SetServerStatus(server.(*loadbalancer.WeightedServerInstance).ID, false); err != nil {
 			t.lastError = err
 			return err
 		}

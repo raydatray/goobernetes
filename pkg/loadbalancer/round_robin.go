@@ -14,9 +14,9 @@ func NewRoundRobinLoadBalancer() LoadBalancer {
 	}
 }
 
-func (rr *RoundRobinLoadBalancer) NextServer() (*ServerInstance, error) {
-	rr.mutex.Lock()
-	defer rr.mutex.Unlock()
+func (rr *RoundRobinLoadBalancer) NextServer() (Server, error) {
+	rr.Lock()
+	defer rr.Unlock()
 
 	if len(rr.servers) == 0 {
 		return nil, ErrNoServerAvailable
@@ -25,7 +25,7 @@ func (rr *RoundRobinLoadBalancer) NextServer() (*ServerInstance, error) {
 	startIndex := rr.current
 	for i := 0; i < len(rr.servers); i++ {
 		currentIndex := (startIndex + i) % len(rr.servers)
-		server := rr.servers[currentIndex]
+		server, _ := rr.servers[currentIndex].(*ServerInstance)
 
 		if server.Active && server.AcquireConnection() {
 			rr.current = (currentIndex + 1) % len(rr.servers)

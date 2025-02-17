@@ -35,7 +35,7 @@ func (r *Router) ServeRequest(w http.ResponseWriter, req *http.Request) {
 
 	targetURL := &url.URL{
 		Scheme: "http",
-		Host:   fmt.Sprintf("%s:%d", server.Host, server.Port),
+		Host:   fmt.Sprintf("%s:%d", server.GetHost(), server.GetPort()),
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)

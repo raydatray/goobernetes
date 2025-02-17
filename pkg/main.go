@@ -29,7 +29,7 @@ func main() {
 		Use:   "lb",
 		Short: "start a load balancer instance",
 		Run: func(cmd *cobra.Command, args []string) {
-			lb := loadbalancer.NewWeightedRoundRobinLoadBalancer()
+			lb := loadbalancer.NewRoundRobinLoadBalancer()
 
 			defaultBackends := []*loadbalancer.ServerInstance{
 				loadbalancer.NewServerInstance("server1", "backend1", 8081, 5),
@@ -37,10 +37,8 @@ func main() {
 				loadbalancer.NewServerInstance("server3", "backend3", 8083, 5),
 			}
 
-			defaultWeights := []int{3, 1, 2}
-
-			for i, backend := range defaultBackends {
-				if err := lb.AddServer(backend, loadbalancer.WithWeight(defaultWeights[i])); err != nil {
+			for _, backend := range defaultBackends {
+				if err := lb.AddServer(backend); err != nil {
 					log.Printf("warning: failed to add backend server: %v", err)
 				}
 			}

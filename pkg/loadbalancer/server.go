@@ -1,5 +1,16 @@
 package loadbalancer
 
+type Server interface {
+	GetID() string
+	GetHost() string
+	GetPort() int
+	GetActive() bool
+	GetMaxConns() int
+	GetConnections() chan struct{}
+	AcquireConnection() bool
+	ReleaseConnection()
+}
+
 type ServerInstance struct {
 	ID          string
 	Host        string
@@ -7,10 +18,9 @@ type ServerInstance struct {
 	Active      bool
 	MaxConns    int
 	connections chan struct{}
-	Weight      int
 }
 
-type Option func(*ServerInstance)
+var _ Server = (*ServerInstance)(nil)
 
 func NewServerInstance(id string, host string, port int, maxConns int) *ServerInstance {
 	return &ServerInstance{
@@ -21,6 +31,30 @@ func NewServerInstance(id string, host string, port int, maxConns int) *ServerIn
 		MaxConns:    maxConns,
 		connections: make(chan struct{}, maxConns),
 	}
+}
+
+func (s *ServerInstance) GetID() string {
+	return s.ID
+}
+
+func (s *ServerInstance) GetHost() string {
+	return s.Host
+}
+
+func (s *ServerInstance) GetPort() int {
+	return s.Port
+}
+
+func (s *ServerInstance) GetActive() bool {
+	return s.Active
+}
+
+func (s *ServerInstance) GetMaxConns() int {
+	return s.MaxConns
+}
+
+func (s *ServerInstance) GetConnections() chan struct{} {
+	return s.connections
 }
 
 func (s *ServerInstance) AcquireConnection() bool {
