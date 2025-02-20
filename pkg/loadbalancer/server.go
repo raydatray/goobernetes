@@ -1,6 +1,15 @@
 package loadbalancer
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"net"
+)
+
+var (
+	ErrInvalidIP   = errors.New("Invalid IP address")
+	ErrInvalidPort = errors.New("Invalid port nunmber")
+)
 
 type Server interface {
 	GetHostPort() string
@@ -19,7 +28,25 @@ type ServerInstance struct {
 
 var _ Server = (*ServerInstance)(nil)
 
-func NewServerInstance(id string, host string, port int, maxConns int) *ServerInstance {
+func NewServerInstance(id string, host string, port int, maxConns int) (*ServerInstance, error) {
+	ip := net.ParseIP(host)
+
+	if ip == nil {
+		ips, err := net.LookupIP(host)
+
+		if err != nil || len(ips) == 0 {
+			return nil, fmt.Errorf("%w: %s\n", ErrInvalidIP, host)
+		}
+	}
+
+	if ip.IsUnspecified() {
+		return nil, fmt.Errorf("%w: %s\n", ErrInvalidIP, host)
+	}
+
+	if port < 1 || port > 65535 {
+		return nil, fmt.Errorf("%w: %d\n", ErrInvalidPort, port)
+	}
+
 	return &ServerInstance{
 		ID:          id,
 		Host:        host,
@@ -27,7 +54,7 @@ func NewServerInstance(id string, host string, port int, maxConns int) *ServerIn
 		Active:      true,
 		MaxConns:    maxConns,
 		connections: make(chan struct{}, maxConns),
-	}
+	}, nil
 }
 
 func (s *ServerInstance) GetHostPort() string {

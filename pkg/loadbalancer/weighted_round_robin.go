@@ -1,6 +1,8 @@
 package loadbalancer
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type WeightedServerInstance struct {
 	ServerInstance
@@ -93,9 +95,15 @@ func (wrr *WeightedRoundRobinLoadBalancer) NextServer() (Server, error) {
 
 var _ Server = (*WeightedServerInstance)(nil)
 
-func NewWeightedServerInstance(id string, host string, port int, maxConns int, weight int) *WeightedServerInstance {
-	return &WeightedServerInstance{
-		ServerInstance: *NewServerInstance(id, host, port, maxConns),
-		Weight:         weight,
+func NewWeightedServerInstance(id string, host string, port int, maxConns int, weight int) (*WeightedServerInstance, error) {
+	ServerInstance, err := NewServerInstance(id, host, port, maxConns)
+
+	if err != nil {
+		return nil, err
 	}
+
+	return &WeightedServerInstance {
+		ServerInstance: *ServerInstance,
+		Weight: weight,
+	}, nil
 }

@@ -31,15 +31,31 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			lb := loadbalancer.NewRoundRobinLoadBalancer()
 
-			defaultBackends := []*loadbalancer.ServerInstance{
-				loadbalancer.NewServerInstance("server1", "backend1", 8081, 5),
-				loadbalancer.NewServerInstance("server2", "backend2", 8082, 5),
-				loadbalancer.NewServerInstance("server3", "backend3", 8083, 5),
+			servers := []struct {
+				id      string
+				host    string
+				port    int
+				maxConn int
+			}{
+				{"server1", "backend1", 8081, 5},
+				{"server2", "backend2", 8082, 5},
+				{"server3", "backend3", 8083, 5},
 			}
 
-			for _, backend := range defaultBackends {
-				if err := lb.AddServer(backend); err != nil {
-					log.Printf("warning: failed to add backend server: %v", err)
+			for _, server := range servers {
+				server, err := loadbalancer.NewServerInstance(
+					server.id,
+					server.host,
+					server.port,
+					server.maxConn,
+				)
+
+				if err != nil {
+					log.Printf("failed to create server: %v", err)
+				}
+
+				if err := lb.AddServer(server); err != nil {
+					log.Printf("failed to add server: %v", err)
 				}
 			}
 
