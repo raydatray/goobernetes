@@ -1,7 +1,12 @@
 package loadbalancer
 
 import (
+	"errors"
 	"fmt"
+)
+
+var (
+	ErrInvalidWeight = errors.New("Invalid weight")
 )
 
 type WeightedServerInstance struct {
@@ -102,8 +107,12 @@ func NewWeightedServerInstance(id string, host string, port int, maxConns int, w
 		return nil, err
 	}
 
-	return &WeightedServerInstance {
+	if weight < 0 {
+		return nil, fmt.Errorf("%w: %d", ErrInvalidWeight, weight)
+	}
+
+	return &WeightedServerInstance{
 		ServerInstance: *ServerInstance,
-		Weight: weight,
+		Weight:         weight,
 	}, nil
 }
