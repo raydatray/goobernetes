@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	ErrInvalidIP   = errors.New("Invalid IP address")
-	ErrInvalidPort = errors.New("Invalid port nunmber")
+	ErrInvalidIP       = errors.New("Invalid IP address")
+	ErrInvalidPort     = errors.New("Invalid port nunmber")
+	ErrInvalidMaxConns = errors.New("Invalid max connections")
 )
 
 type Server interface {
@@ -35,16 +36,20 @@ func NewServerInstance(id string, host string, port int, maxConns int) (*ServerI
 		ips, err := net.LookupIP(host)
 
 		if err != nil || len(ips) == 0 {
-			return nil, fmt.Errorf("%w: %s\n", ErrInvalidIP, host)
+			return nil, fmt.Errorf("%w: %s", ErrInvalidIP, host)
 		}
 	}
 
 	if ip.IsUnspecified() {
-		return nil, fmt.Errorf("%w: %s\n", ErrInvalidIP, host)
+		return nil, fmt.Errorf("%w: %s", ErrInvalidIP, host)
 	}
 
 	if port < 1 || port > 65535 {
-		return nil, fmt.Errorf("%w: %d\n", ErrInvalidPort, port)
+		return nil, fmt.Errorf("%w: %d", ErrInvalidPort, port)
+	}
+
+	if maxConns < 1 {
+		return nil, fmt.Errorf("%w: %d", ErrInvalidMaxConns, maxConns)
 	}
 
 	return &ServerInstance{
