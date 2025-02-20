@@ -37,9 +37,9 @@ func main() {
 				port    int
 				maxConn int
 			}{
-				{"server1", "backend1", 8081, 5},
-				{"server2", "backend2", 8082, 5},
-				{"server3", "backend3", 8083, 5},
+				{"mcschool", "192.168.23.145", 8081, 5},
+				{"g1 home router", "10.234.67.89", 8082, 5},
+				{"typeracer", "172.16.92.201", 8083, 5},
 			}
 
 			for _, server := range servers {
