@@ -33,11 +33,7 @@ func NewServerInstance(id string, host string, port int, maxConns int) (*ServerI
 	ip := net.ParseIP(host)
 
 	if ip == nil {
-		ips, err := net.LookupIP(host)
-
-		if err != nil || len(ips) == 0 {
-			return nil, fmt.Errorf("%w: %s", ErrInvalidIP, host)
-		}
+		return nil, fmt.Errorf("%w: %s", ErrInvalidIP, host)
 	}
 
 	if ip.IsUnspecified() {
