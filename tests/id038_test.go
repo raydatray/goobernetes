@@ -13,8 +13,9 @@ import (
 
 type userInputValidationTest struct {
 	lb        loadbalancer.LoadBalancer
-	server    *loadbalancer.ServerInstance
+	server    *loadbalancer.WeightedServerInstance
 	lastError error
+	expected  string
 }
 
 func (t *userInputValidationTest) reset() {
@@ -57,53 +58,42 @@ func (t *userInputValidationTest) iEnterTheFollowingServerDetails(table *godog.T
 		serverDetails[field] = value
 	}
 
-	// Convert port and weight to integers
-	port := 0
-	if portStr := serverDetails["Port"]; portStr != "" {
-		if p, err := strconv.Atoi(portStr); err == nil {
-			port = p
-		}
-	}
+	port, _ := strconv.Atoi(serverDetails["Port"])
+	max_connections, _ := strconv.Atoi(serverDetails["Max Connections"])
+	weight, _ := strconv.Atoi(serverDetails["Weight"])
 
-	weight := 0
-	if weightStr := serverDetails["Weight"]; weightStr != "" {
-		if w, err := strconv.Atoi(weightStr); err == nil {
-			weight = w
-		}
-	}
-
-	server, err := loadbalancer.NewServerInstance(
+	server, err := loadbalancer.NewWeightedServerInstance(
 		serverDetails["Server Name"],
 		serverDetails["IP Address"],
 		port,
+		max_connections,
 		weight,
 	)
 
-	if err != nil {
-		t.lastError = err
-		return nil
-	}
-
 	t.server = server
+	t.lastError = err
+	t.expected = serverDetails["Expected"]
 	return nil
 }
 
 func (t *userInputValidationTest) theSystemShouldValidate(table *godog.Table) error {
-	if t.lastError != nil {
-		switch {
-		case errors.Is(t.lastError, loadbalancer.ErrInvalidIP):
-			return nil
-		case errors.Is(t.lastError, loadbalancer.ErrInvalidPort):
-			return nil
-		case errors.Is(t.lastError, loadbalancer.ErrInvalidMaxConns):
-			return nil
-		default:
-			return fmt.Errorf("Unexpected validation error: %v", t.lastError)
+	if t.expected == "Success" {
+		if t.lastError != nil {
+			return fmt.Errorf("Expected Success but got error: %v", t.lastError)
 		}
+		if t.server == nil {
+			return fmt.Errorf("Expected Success but server is nil")
+		}
+		return nil
 	}
 
-	if t.server == nil {
-		return fmt.Errorf("Unexpected validation error: %v", t.lastError)
+	if t.lastError == nil {
+		return fmt.Errorf("Expected error '%s' but got no error", t.expected)
+	}
+
+	actualError := t.lastError.Error()
+	if actualError != t.expected {
+		return fmt.Errorf("Expected '%s', but got '%s'", t.expected, actualError)
 	}
 
 	return nil
