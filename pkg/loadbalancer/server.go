@@ -4,12 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"regexp"
 )
 
 var (
-	ErrInvalidIP       = errors.New("Invalid IP address")
-	ErrInvalidPort     = errors.New("Invalid port nunmber")
-	ErrInvalidMaxConns = errors.New("Invalid max connections")
+	ErrInvalidServerNameLength = errors.New("Invalid server name length")
+	ErrInvalidCharInServerName = errors.New("Invalid character in server name")
+	ErrInvalidIP               = errors.New("Invalid IP address")
+	ErrInvalidPort             = errors.New("Invalid port number")
+	ErrInvalidMaxConns         = errors.New("Invalid max connections")
+
+	serverNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
 )
 
 type Server interface {
@@ -30,6 +35,14 @@ type ServerInstance struct {
 var _ Server = (*ServerInstance)(nil)
 
 func NewServerInstance(id string, host string, port int, maxConns int) (*ServerInstance, error) {
+	if len(id) < 1 || len(id) > 64 {
+		return nil, ErrInvalidServerNameLength
+	}
+
+	if !serverNameRegex.MatchString(id) {
+		return nil, ErrInvalidCharInServerName
+	}
+
 	ip := net.ParseIP(host)
 
 	if ip == nil || ip.IsUnspecified() {

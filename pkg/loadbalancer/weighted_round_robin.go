@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var ErrInvalidWeight = errors.New("Invalid weight")
+var ErrInvalidWeight = errors.New("Invalid weight (must be between 1-100 inclusive)")
 
 type WeightedServerInstance struct {
 	ServerInstance
@@ -105,7 +105,7 @@ func NewWeightedServerInstance(id string, host string, port int, maxConns int, w
 		return nil, err
 	}
 
-	if weight < 0 {
+	if weight < 1 || weight > 100 {
 		return nil, fmt.Errorf("%w: %d", ErrInvalidWeight, weight)
 	}
 
