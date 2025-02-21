@@ -5,9 +5,7 @@ import (
 	"fmt"
 )
 
-var (
-	ErrInvalidWeight = errors.New("Invalid weight")
-)
+var ErrInvalidWeight = errors.New("Invalid weight")
 
 type WeightedServerInstance struct {
 	ServerInstance

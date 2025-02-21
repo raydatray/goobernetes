@@ -39,7 +39,8 @@ func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Ta
 			return fmt.Errorf("failed to create server: %v", err)
 		}
 
-		if err := t.lb.AddServer(server); err != nil {
+		err = t.lb.AddServer(server)
+		if err != nil {
 			return fmt.Errorf("failed to add server: %v", err)
 		}
 	}
