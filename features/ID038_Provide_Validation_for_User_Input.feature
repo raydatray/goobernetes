@@ -1,5 +1,5 @@
 Feature: Load Balancer User Input Validation
-  
+
   As a system administrator
   I want to validate user-provided configuration inputs,
   So that I can ensure the load balancer is configured correctly and securely.
@@ -8,8 +8,7 @@ Feature: Load Balancer User Input Validation
     Given the load balancer service is running
     And I am authenticated as an administrator
     And the backend server pool is accessible
-    And the validation service is available
-    
+
   Scenario: Validate Backend Server Registration
     Given I am configuring a new backend server
     When I enter the following server details:
