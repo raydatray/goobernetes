@@ -1,6 +1,11 @@
 package loadbalancer
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrInvalidWeight = errors.New("Invalid weight (must be between 1-100 inclusive)")
 
 type WeightedServerInstance struct {
 	ServerInstance
@@ -93,9 +98,19 @@ func (wrr *WeightedRoundRobinLoadBalancer) NextServer() (Server, error) {
 
 var _ Server = (*WeightedServerInstance)(nil)
 
-func NewWeightedServerInstance(id string, host string, port int, maxConns int, weight int) *WeightedServerInstance {
-	return &WeightedServerInstance{
-		ServerInstance: *NewServerInstance(id, host, port, maxConns),
-		Weight:         weight,
+func NewWeightedServerInstance(id string, host string, port int, maxConns int, weight int) (*WeightedServerInstance, error) {
+	ServerInstance, err := NewServerInstance(id, host, port, maxConns)
+
+	if err != nil {
+		return nil, err
 	}
+
+	if weight < 1 || weight > 100 {
+		return nil, fmt.Errorf("%w: %d", ErrInvalidWeight, weight)
+	}
+
+	return &WeightedServerInstance{
+		ServerInstance: *ServerInstance,
+		Weight:         weight,
+	}, nil
 }
