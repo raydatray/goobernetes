@@ -114,7 +114,7 @@ func (t *roundRobinTest) theLoadBalancerShouldReturnAServiceUnavailableResponse(
 	return nil
 }
 
-func intializeID001Scenario(ctx *godog.ScenarioContext) {
+func initializeID001Scenario(ctx *godog.ScenarioContext) {
 	test := &roundRobinTest{}
 
 	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
@@ -135,7 +135,7 @@ func intializeID001Scenario(ctx *godog.ScenarioContext) {
 
 func TestID001(t *testing.T) {
 	suite := godog.TestSuite{
-		ScenarioInitializer: intializeID001Scenario,
+		ScenarioInitializer: initializeID001Scenario,
 		Options: &godog.Options{
 			Format:    "pretty",
 			Paths:     []string{"../features/ID001_Implement_Round_Robin.feature"},

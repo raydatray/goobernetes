@@ -88,3 +88,7 @@ func (s *ServerInstance) ReleaseConnection() {
 	default:
 	}
 }
+
+func (s *ServerInstance) GetConnectionAmount() int {
+	return len(s.connections)
+}

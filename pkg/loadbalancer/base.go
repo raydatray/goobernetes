@@ -2,6 +2,7 @@ package loadbalancer
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -81,4 +82,36 @@ func (b *BaseLoadBalancer) SetServerStatus(serverID string, active bool) error {
 		}
 	}
 	return ErrServerNotFound
+}
+
+func (b *BaseLoadBalancer) UpdateServerMaxConn(serverID string, maxConn int) error {
+	b.Lock()
+	defer b.Unlock()
+
+	if maxConn < 1 {
+		return fmt.Errorf("%w: %d", ErrInvalidMaxConns, maxConn)
+	}
+
+	for _, s := range b.servers {
+		if s.(*ServerInstance).ID == serverID {
+			s.(*ServerInstance).MaxConns = maxConn
+			s.(*ServerInstance).connections = copyChannel(s.(*ServerInstance).connections, maxConn)
+			return nil
+		}
+	}
+
+	return ErrServerNotFound
+}
+
+func copyChannel(oldChan <-chan struct{}, newChanSize int) chan struct{} {
+	newChan := make(chan struct{}, newChanSize)
+
+	go func() {
+		defer close(newChan)
+		for val := range oldChan {
+			newChan <- val
+		}
+	}()
+
+	return newChan
 }
