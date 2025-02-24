@@ -1,11 +1,13 @@
 package loadbalancer
 
+import "fmt"
+
 type RoundRobinLoadBalancer struct {
 	BaseLoadBalancer
 	current int
 }
 
-var _ LoadBalancer = (*RoundRobinLoadBalancer)(nil) //Compile time interface check
+var _ LoadBalancer = (*RoundRobinLoadBalancer)(nil) // Compile time interface check
 
 func NewRoundRobinLoadBalancer() LoadBalancer {
 	return &RoundRobinLoadBalancer{
@@ -14,9 +16,9 @@ func NewRoundRobinLoadBalancer() LoadBalancer {
 	}
 }
 
-func (rr *RoundRobinLoadBalancer) NextServer() (*ServerInstance, error) {
-	rr.mutex.Lock()
-	defer rr.mutex.Unlock()
+func (rr *RoundRobinLoadBalancer) NextServer() (Server, error) {
+	rr.Lock()
+	defer rr.Unlock()
 
 	if len(rr.servers) == 0 {
 		return nil, ErrNoServerAvailable
@@ -25,9 +27,11 @@ func (rr *RoundRobinLoadBalancer) NextServer() (*ServerInstance, error) {
 	startIndex := rr.current
 	for i := 0; i < len(rr.servers); i++ {
 		currentIndex := (startIndex + i) % len(rr.servers)
-		if rr.servers[currentIndex].Active {
+		server, _ := rr.servers[currentIndex].(*ServerInstance)
+		fmt.Printf("ID: %s, Active: %t\n", server.ID, server.Active)
+		if server.Active && server.AcquireConnection() {
 			rr.current = (currentIndex + 1) % len(rr.servers)
-			return rr.servers[currentIndex], nil
+			return server, nil
 		}
 	}
 

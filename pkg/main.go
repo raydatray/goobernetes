@@ -31,15 +31,19 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			lb := loadbalancer.NewRoundRobinLoadBalancer()
 
+			server1, _ := loadbalancer.NewServerInstance("mcschool", "192.0.0.1", 8081, 5)
+			server2, _ := loadbalancer.NewServerInstance("g1-home-router", "192.0.0.2", 8082, 5)
+			server3, _ := loadbalancer.NewServerInstance("herroshima", "192.0.0.3", 8083, 5)
+
 			defaultBackends := []*loadbalancer.ServerInstance{
-				{ID: "server1", Host: "localhost", Port: 8081, Active: true},
-				{ID: "server2", Host: "localhost", Port: 8082, Active: true},
-				{ID: "server3", Host: "localhost", Port: 8083, Active: true},
+				server1,
+				server2,
+				server3,
 			}
 
-			for _, backend := range defaultBackends {
-				if err := lb.AddServer(backend); err != nil {
-					log.Printf("warning: failed to add backend server: %v", err)
+			for _, server := range defaultBackends {
+				if err := lb.AddServer(server); err != nil {
+					log.Printf("failed to add server: %v", err)
 				}
 			}
 
@@ -68,7 +72,6 @@ func main() {
 		},
 	}
 
-	// Backend server command
 	backendCmd := &cobra.Command{
 		Use:   "backend",
 		Short: "start a mock backend server instance",
