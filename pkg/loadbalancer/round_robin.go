@@ -1,7 +1,5 @@
 package loadbalancer
 
-import "fmt"
-
 type RoundRobinLoadBalancer struct {
 	BaseLoadBalancer
 	current int
@@ -28,7 +26,6 @@ func (rr *RoundRobinLoadBalancer) NextServer() (Server, error) {
 	for i := 0; i < len(rr.servers); i++ {
 		currentIndex := (startIndex + i) % len(rr.servers)
 		server, _ := rr.servers[currentIndex].(*ServerInstance)
-		fmt.Printf("ID: %s, Active: %t\n", server.ID, server.Active)
 		if server.Active && server.AcquireConnection() {
 			rr.current = (currentIndex + 1) % len(rr.servers)
 			return server, nil
