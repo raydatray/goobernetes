@@ -103,11 +103,11 @@ func (b *BaseLoadBalancer) UpdateServerMaxConn(serverID string, maxConn int) err
 	return ErrServerNotFound
 }
 
-func copyChannel(oldChan <-chan struct{}, newChanSize int) chan struct{} {
+func copyChannel(oldChan chan struct{}, newChanSize int) chan struct{} {
 	newChan := make(chan struct{}, newChanSize)
 
 	go func() {
-		defer close(newChan)
+		defer close(oldChan)
 		for val := range oldChan {
 			newChan <- val
 		}
