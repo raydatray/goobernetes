@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,76 +11,150 @@ import (
 	"time"
 )
 
+var (
+	ErrInvalidRateLimit    = errors.New("invalid rate limit: value must be positive")
+	ErrInvalidWindowSize   = errors.New("invalid window size: duration must be positive")
+	ErrRateLimitExceeded   = errors.New("rate limit exceeded")
+	ErrRateLimiterNotFound = errors.New("rate limiter not found")
+)
+
+type RateLimitResponse struct {
+	Error     string `json:"error,omitempty"`
+	Limit     int64  `json:"limit"`
+	Remaining int64  `json:"remaining"`
+	Reset     int64  `json:"reset"` // Unix timestamp
+}
+
 type RateLimiter struct {
 	requests   atomic.Int64
 	limit      int64
 	windowSize time.Duration
-	lastReset  atomic.Int64
+	mu         sync.RWMutex
+	lastReset  time.Time
 }
 
-var (
-	ErrBadRequest = errors.New("400 Bad Request")
-)
-
-func NewRateLimiter(limit int64, windowSize time.Duration) (*RateLimiter, error) {
-	if limit < 0 {
-		return nil, ErrBadRequest
+func NewRateLimiter(requestLimit int64, windowSize time.Duration) (*RateLimiter, error) {
+	if requestLimit <= 0 {
+		return nil, ErrInvalidRateLimit
 	}
 
-	if windowSize < 0 {
-		return nil, ErrBadRequest
+	if windowSize <= 0 {
+		return nil, ErrInvalidWindowSize
 	}
 
-	rl := &RateLimiter{
-		limit:      limit,
+	rateLimiter := &RateLimiter{
+		limit:      requestLimit,
 		windowSize: windowSize,
+		lastReset:  time.Now(),
 	}
-	rl.lastReset.Store(time.Now().UnixNano())
-	return rl, nil
+	return rateLimiter, nil
 }
 
-func (rl *RateLimiter) TryAcquire() bool {
-	now := time.Now().UnixNano()
-	windowStart := rl.lastReset.Load()
+func (rateLimiter *RateLimiter) TryAcquire() bool {
+	rateLimiter.mu.Lock()
+	defer rateLimiter.mu.Unlock()
 
-	if time.Duration(now-windowStart) >= rl.windowSize {
-		rl.lastReset.Store(now)
-		rl.requests.Store(0)
+	now := time.Now()
+	if now.Sub(rateLimiter.lastReset) >= rateLimiter.windowSize {
+		rateLimiter.requests.Store(0)
+		rateLimiter.lastReset = now
 	}
 
-	current := rl.requests.Add(1)
-	if current > rl.limit {
-		rl.requests.Add(-1)
+	currentRequests := rateLimiter.requests.Add(1)
+	if currentRequests > rateLimiter.limit {
+		rateLimiter.requests.Add(-1)
 		return false
 	}
 
 	return true
 }
 
-func (rl *RateLimiter) Reset() {
-	rl.requests.Store(0)
-	rl.lastReset.Store(time.Now().UnixNano())
+func (rateLimiter *RateLimiter) Reset() {
+	rateLimiter.mu.Lock()
+	defer rateLimiter.mu.Unlock()
+
+	rateLimiter.requests.Store(0)
+	rateLimiter.lastReset = time.Now()
 }
 
-func RateLimiterMiddleware(requestsPerSecond int64) Middleware {
-	rateLimiter, err := NewRateLimiter(requestsPerSecond, time.Second)
+func (rateLimiter *RateLimiter) GetCurrentLimit() int64 {
+	rateLimiter.mu.RLock()
+	defer rateLimiter.mu.RUnlock()
+	return rateLimiter.limit
+}
 
+func (rateLimiter *RateLimiter) GetRemainingRequests() int64 {
+	rateLimiter.mu.RLock()
+	defer rateLimiter.mu.RUnlock()
+	return rateLimiter.limit - rateLimiter.requests.Load()
+}
+
+func (rateLimiter *RateLimiter) GetWindowSize() time.Duration {
+	rateLimiter.mu.RLock()
+	defer rateLimiter.mu.RUnlock()
+	return rateLimiter.windowSize
+}
+
+func (rateLimiter *RateLimiter) GetResetTime() int64 {
+	return time.Now().Add(rateLimiter.GetWindowSize()).Unix()
+}
+
+func writeRateLimitResponse(responseWriter http.ResponseWriter, statusCode int, response RateLimitResponse) {
+	responseWriter.Header().Set("Content-Type", "application/json")
+	responseWriter.WriteHeader(statusCode)
+	json.NewEncoder(responseWriter).Encode(response)
+}
+
+// Common function to create a middleware with error handling
+func createRateLimitMiddleware(createLimiterFunc func() (interface{}, error), requestsPerSecond int64,
+	handleRequestFunc func(interface{}, http.ResponseWriter, *http.Request, http.HandlerFunc)) Middleware {
+
+	limiter, err := createLimiterFunc()
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create rate limiter: %v", err))
+		return func(next http.HandlerFunc) http.HandlerFunc {
+			return func(responseWriter http.ResponseWriter, request *http.Request) {
+				response := RateLimitResponse{
+					Error: "Rate limiter misconfigured",
+					Limit: requestsPerSecond,
+				}
+				writeRateLimitResponse(responseWriter, http.StatusServiceUnavailable, response)
+			}
+		}
 	}
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			if !rateLimiter.TryAcquire() {
-				w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", requestsPerSecond))
-				w.Header().Set("X-RateLimit-Remaining", "0")
-				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
-				return
-			}
-
-			next(w, r)
+		return func(responseWriter http.ResponseWriter, request *http.Request) {
+			handleRequestFunc(limiter, responseWriter, request, next)
 		}
 	}
+}
+
+// Handles rate limiting for a single RateLimiter
+func handleBasicRateLimiting(limiter *RateLimiter, responseWriter http.ResponseWriter, request *http.Request, next http.HandlerFunc) {
+	if !limiter.TryAcquire() {
+		response := RateLimitResponse{
+			Error:     ErrRateLimitExceeded.Error(),
+			Limit:     limiter.GetCurrentLimit(),
+			Remaining: 0,
+			Reset:     limiter.GetResetTime(),
+		}
+		writeRateLimitResponse(responseWriter, http.StatusTooManyRequests, response)
+		return
+	}
+
+	next(responseWriter, request)
+}
+
+func RateLimiterMiddleware(requestsPerSecond int64) Middleware {
+	return createRateLimitMiddleware(
+		func() (interface{}, error) {
+			return NewRateLimiter(requestsPerSecond, time.Second)
+		},
+		requestsPerSecond,
+		func(limiter interface{}, responseWriter http.ResponseWriter, request *http.Request, next http.HandlerFunc) {
+			handleBasicRateLimiting(limiter.(*RateLimiter), responseWriter, request, next)
+		},
+	)
 }
 
 type IPRateLimiter struct {
@@ -88,49 +163,75 @@ type IPRateLimiter struct {
 	window   time.Duration
 }
 
-func NewIPRateLimiter(limit int64, window time.Duration) *IPRateLimiter {
-	return &IPRateLimiter{
-		limit:  limit,
-		window: window,
+func NewIPRateLimiter(requestLimit int64, windowSize time.Duration) (*IPRateLimiter, error) {
+	if requestLimit <= 0 {
+		return nil, ErrInvalidRateLimit
 	}
+
+	if windowSize <= 0 {
+		return nil, ErrInvalidWindowSize
+	}
+
+	return &IPRateLimiter{
+		limit:  requestLimit,
+		window: windowSize,
+	}, nil
 }
 
-func (irl *IPRateLimiter) getLimiter(ip string) *RateLimiter {
-	limiter, exists := irl.limiters.Load(ip)
-
-	if !exists {
-		newLimiter, err := NewRateLimiter(irl.limit, irl.window)
-		if err != nil {
-			panic(fmt.Sprintf("Failed to create rate limiter: %v", err))
+func (ipLimiter *IPRateLimiter) GetLimiter(ipAddress string) (*RateLimiter, error) {
+	limiterInterface, exists := ipLimiter.limiters.Load(ipAddress)
+	if exists {
+		limiter, ok := limiterInterface.(*RateLimiter)
+		if !ok {
+			return nil, fmt.Errorf("invalid limiter type for IP %s", ipAddress)
 		}
-		actual, loaded := irl.limiters.LoadOrStore(ip, newLimiter)
-		if loaded {
-			return actual.(*RateLimiter)
-		}
-		return newLimiter
+		return limiter, nil
 	}
-	return limiter.(*RateLimiter)
+
+	newLimiter, err := NewRateLimiter(ipLimiter.limit, ipLimiter.window)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create limiter for IP %s: %w", ipAddress, err)
+	}
+
+	actualLimiter, loaded := ipLimiter.limiters.LoadOrStore(ipAddress, newLimiter)
+	if loaded {
+		limiter, ok := actualLimiter.(*RateLimiter)
+		if !ok {
+			return nil, fmt.Errorf("invalid stored limiter type for IP %s", ipAddress)
+		}
+		return limiter, nil
+	}
+	return newLimiter, nil
+}
+
+// Handles rate limiting based on IP address
+func handleIPRateLimiting(ipLimiter *IPRateLimiter, responseWriter http.ResponseWriter, request *http.Request, next http.HandlerFunc) {
+	ipAddress := request.RemoteAddr
+	if forwardedFor := request.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+		ipAddress = strings.Split(forwardedFor, ",")[0]
+	}
+
+	limiter, err := ipLimiter.GetLimiter(ipAddress)
+	if err != nil {
+		response := RateLimitResponse{
+			Error: "Rate limiter error",
+			Limit: ipLimiter.limit,
+		}
+		writeRateLimitResponse(responseWriter, http.StatusServiceUnavailable, response)
+		return
+	}
+
+	handleBasicRateLimiting(limiter, responseWriter, request, next)
 }
 
 func IPRateLimiterMiddleware(requestsPerSecond int64) Middleware {
-	ipRateLimiter := NewIPRateLimiter(requestsPerSecond, time.Second)
-
-	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			ip := r.RemoteAddr
-			if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
-				ip = strings.Split(forwardedFor, ",")[0]
-			}
-
-			limiter := ipRateLimiter.getLimiter(ip)
-			if !limiter.TryAcquire() {
-				w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", requestsPerSecond))
-				w.Header().Set("X-RateLimit-Remaining", "0")
-				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
-				return
-			}
-
-			next(w, r)
-		}
-	}
+	return createRateLimitMiddleware(
+		func() (interface{}, error) {
+			return NewIPRateLimiter(requestsPerSecond, time.Second)
+		},
+		requestsPerSecond,
+		func(limiter interface{}, responseWriter http.ResponseWriter, request *http.Request, next http.HandlerFunc) {
+			handleIPRateLimiting(limiter.(*IPRateLimiter), responseWriter, request, next)
+		},
+	)
 }
