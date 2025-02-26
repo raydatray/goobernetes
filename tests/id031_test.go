@@ -387,8 +387,8 @@ func initializeID031Scenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I attempt to set invalid rate limit values:$`, test.verifyInvalidSettings)
 	ctx.Step(`^the system should return a "([^"]*)" response$`, test.verifyErrorResponse)
 	ctx.Step(`^the rate limit settings should remain unchanged$`, test.verifyUnchangedSettings)
-	ctx.Step(`^the rate limiter headers should show remaining requests$`, test.theRateLimitResponseShouldShowRemainingRequests)
-	ctx.Step(`^the response should include rate limit headers$`, test.theResponseShouldIncludeRateLimitInformation)
+	ctx.Step(`^the rate limiter response should show remaining requests$`, test.theRateLimitResponseShouldShowRemainingRequests)
+	ctx.Step(`^the response should include rate limit information$`, test.theResponseShouldIncludeRateLimitInformation)
 }
 
 func TestID031(t *testing.T) {

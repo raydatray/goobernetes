@@ -13,7 +13,7 @@ Feature: Configure Request Rate Limiting
   Scenario: Main Flow - Requests within rate limit
     When I send 45 requests within a minute
     Then all requests should be successful
-    And the rate limiter headers should show remaining requests
+    And the rate limiter response should show remaining requests
 
   Scenario: Main Flow - Update rate limit configuration
     When I update the rate limit settings to:
@@ -27,7 +27,7 @@ Feature: Configure Request Rate Limiting
     When I send 55 requests within a minute
     Then the first 50 requests should be successful
     And the remaining requests should receive a "429 Too Many Requests" response
-    And the response should include rate limit headers
+    And the response should include rate limit information
 
   Scenario: Error Flow - Invalid rate limit configuration - requests
     When I attempt to set invalid rate limit values:
