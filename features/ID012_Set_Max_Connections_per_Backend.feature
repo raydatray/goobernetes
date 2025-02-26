@@ -5,7 +5,7 @@ Feature: Configure Maximum Connections Per Backend Server
 
   Background:
     Given the load balancer is running
-    And a backend server exists with id "server1", address "192.168.1.10" and port "8080"
+    And a backend server exists with id "server1", address "192.168.1.10" and port 8080
 
   Scenario: Set valid maximum connections for a backend server
     When I set the maximum connections to 1000 for the backend server
