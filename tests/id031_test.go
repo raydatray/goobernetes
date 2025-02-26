@@ -131,14 +131,15 @@ func (t *rateLimitTest) iShouldBeAbleToSendRequestsSuccessfully(count int) error
 	return t.iSendRequestsWithinAMinute(count)
 }
 
-func (t *rateLimitTest) theStRequestShouldBeRejected(count int) error {
+func (t *rateLimitTest) theStRequestShouldBeRejected() error {
 	if t.rateLimiter != nil {
 		t.rateLimiter.Reset()
 	}
 	t.requestCount = 0
 
 	// First send count-1 requests
-	err := t.iSendRequestsWithinAMinute(count - 1)
+	limit := int(t.currentLimit)
+	err := t.iSendRequestsWithinAMinute(limit)
 	if err != nil {
 		return err
 	}
