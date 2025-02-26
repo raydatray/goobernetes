@@ -14,7 +14,7 @@ Feature: Configure Maximum Connections Per Backend Server
 
   Scenario: Attempt to set invalid maximum connections
     When I try to set the maximum connections to -50 for the backend server
-    Then I should receive an error message "Invalid maximum connections"
+    Then I should receive an error message "Invalid max connections: -50"
 
   Scenario: Update existing maximum connections
     Given the backend server has a maximum connection limit of 1000

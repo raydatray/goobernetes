@@ -93,6 +93,7 @@ func (b *BaseLoadBalancer) UpdateServerMaxConn(serverID string, maxConn int) err
 	}
 
 	for _, s := range b.servers {
+		fmt.Printf("%s, %s\n", s.(*ServerInstance).ID, serverID)
 		if s.(*ServerInstance).ID == serverID {
 			s.(*ServerInstance).MaxConns = maxConn
 			s.(*ServerInstance).connections = copyChannel(s.(*ServerInstance).connections, maxConn)
