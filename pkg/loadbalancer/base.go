@@ -96,7 +96,9 @@ func (b *BaseLoadBalancer) UpdateServerMaxConn(serverID string, maxConn int) err
 		fmt.Printf("%s, %s\n", s.(*ServerInstance).ID, serverID)
 		if s.(*ServerInstance).ID == serverID {
 			s.(*ServerInstance).MaxConns = maxConn
-			s.(*ServerInstance).connections = copyChannel(s.(*ServerInstance).connections, maxConn)
+			close(s.(*ServerInstance).connections)
+			newChan := resizeChannel(s.(*ServerInstance).connections, maxConn)
+			s.(*ServerInstance).connections = newChan
 			return nil
 		}
 	}
@@ -104,11 +106,10 @@ func (b *BaseLoadBalancer) UpdateServerMaxConn(serverID string, maxConn int) err
 	return ErrServerNotFound
 }
 
-func copyChannel(oldChan chan struct{}, newChanSize int) chan struct{} {
+func resizeChannel(oldChan <-chan struct{}, newChanSize int) chan struct{} {
 	newChan := make(chan struct{}, newChanSize)
 
 	go func() {
-		defer close(oldChan)
 		for val := range oldChan {
 			newChan <- val
 		}
