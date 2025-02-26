@@ -76,8 +76,8 @@ func (t *testMaxConn) iTryToSetTheMaximumConnectionsForTheBackendServer(maxConn 
 }
 
 func (t *testMaxConn) IShouldReceiveAnErrorMessage(errorMessage string) error {
-	if t.lastError != loadbalancer.ErrInvalidMaxConns {
-		return fmt.Errorf("expected \"Invalid max connections\" but got %v", t.lastError)
+	if t.lastError.Error() != errorMessage {
+		return fmt.Errorf("expected %s but got %v", errorMessage, t.lastError)
 	}
 	return nil
 }
@@ -86,6 +86,7 @@ func (t *testMaxConn) theBackendServerHasAMaximumConnectionLimit(maxConn int) er
 	t.maxConn = maxConn
 	server, err := loadbalancer.NewServerInstance(t.id, t.host, t.port, t.maxConn)
 	t.server = server
+	_ = t.lb.AddServer(t.server)
 	t.lastError = err
 	return err
 }
