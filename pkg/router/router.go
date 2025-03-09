@@ -1,10 +1,12 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 
 	"github.com/raydatray/goobernetes/pkg/loadbalancer"
 )
@@ -26,7 +28,10 @@ func NewRouter(lb loadbalancer.LoadBalancer) RequestRouter {
 }
 
 func (r *Router) ServeRequest(w http.ResponseWriter, req *http.Request) {
-	server, err := r.lb.NextServer()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	server, err := r.lb.NextServer(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
