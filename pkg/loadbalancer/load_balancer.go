@@ -26,6 +26,8 @@ var (
 	ErrBadServerInterface  = errors.New("server is not a valid interface")
 )
 
+type contextKey string
+
 type BaseLoadBalancer struct {
 	servers []Server
 	*sync.RWMutex
