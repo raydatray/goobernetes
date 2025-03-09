@@ -1,6 +1,7 @@
 package loadbalancer
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -9,7 +10,7 @@ import (
 type LoadBalancer interface {
 	AddServer(server Server) error
 	RemoveServer(serverID string) error
-	NextServer() (Server, error)
+	NextServer(ctx context.Context) (Server, error)
 	SetServerStatus(serverID string, active bool) error
 	GetServers() []Server
 	UpdateServerMaxConn(serverID string, maxConn int) error

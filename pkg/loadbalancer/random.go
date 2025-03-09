@@ -1,6 +1,9 @@
 package loadbalancer
 
-import "math/rand/v2"
+import (
+	"context"
+	"math/rand/v2"
+)
 
 type RandomLoadBalancer struct {
 	BaseLoadBalancer
@@ -18,7 +21,7 @@ func NewRandomLoadBalancer() LoadBalancer {
 	}
 }
 
-func (r *RandomLoadBalancer) NextServer() (Server, error) {
+func (r *RandomLoadBalancer) NextServer(ctx context.Context) (Server, error) {
 	r.Lock()
 	defer r.Unlock()
 

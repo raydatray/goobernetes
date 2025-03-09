@@ -1,6 +1,7 @@
 package loadbalancer
 
 import (
+	"context"
 	"errors"
 	"fmt"
 )
@@ -72,7 +73,7 @@ func (wrr *WeightedRoundRobinLoadBalancer) SetServerStatus(serverID string, acti
 	return ErrServerNotFound
 }
 
-func (wrr *WeightedRoundRobinLoadBalancer) NextServer() (Server, error) {
+func (wrr *WeightedRoundRobinLoadBalancer) NextServer(ctx context.Context) (Server, error) {
 	wrr.Lock()
 	defer wrr.Unlock()
 

@@ -61,7 +61,7 @@ func (t *weightedRoundRobinTest) allBackendServersAreHealthy() error {
 func (t *weightedRoundRobinTest) aClientMakesConsecutiveRequests(requestCount int) error {
 	t.requests = make([]*loadbalancer.WeightedServerInstance, 0)
 	for i := 0; i < requestCount; i++ {
-		server, err := t.lb.NextServer()
+		server, err := t.lb.NextServer(context.Background())
 		if err != nil {
 			t.lastError = err
 			return err
@@ -102,7 +102,7 @@ func (t *weightedRoundRobinTest) allBackendServersAreUnavailable() error {
 }
 
 func (t *weightedRoundRobinTest) aClientMakesARequest() error {
-	_, err := t.lb.NextServer()
+	_, err := t.lb.NextServer(context.Background())
 	t.lastError = err
 	return nil
 }
