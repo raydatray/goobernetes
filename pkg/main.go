@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/raydatray/goobernetes/pkg/loadbalancer"
 	"github.com/raydatray/goobernetes/pkg/router"
@@ -31,9 +32,9 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			lb := loadbalancer.NewRoundRobinLoadBalancer()
 
-			server1, _ := loadbalancer.NewServerInstance("mcschool", "192.0.0.1", 8081, 5)
-			server2, _ := loadbalancer.NewServerInstance("g1-home-router", "192.0.0.2", 8082, 5)
-			server3, _ := loadbalancer.NewServerInstance("herroshima", "192.0.0.3", 8083, 5)
+			server1, _ := loadbalancer.NewServerInstance("mcschool", "127.0.0.1", 8081, 5)
+			server2, _ := loadbalancer.NewServerInstance("g1-home-router", "127.0.0.2", 8082, 5)
+			server3, _ := loadbalancer.NewServerInstance("herroshima", "127.0.0.3", 8083, 5)
 
 			defaultBackends := []*loadbalancer.ServerInstance{
 				server1,
@@ -46,6 +47,15 @@ func main() {
 					log.Printf("failed to add server: %v", err)
 				}
 			}
+
+			healthChecker := loadbalancer.NewHealthChecker(
+				lb,
+				5*time.Second,
+				2*time.Second,
+			)
+
+			healthChecker.Start()
+			defer healthChecker.Stop()
 
 			r := router.NewRouter(lb)
 			srv := servlets.NewHttpServer(r, config.Port)
