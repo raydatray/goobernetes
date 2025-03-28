@@ -55,13 +55,13 @@ func (t *testMaxConn) theMaximumConnectionsShouldBeUpdatedSuccessfully() error {
 func (t *testMaxConn) theBackendServerShouldAcceptConnectionsUpToTheLimit() error {
 	_ = t.lb.AddServer(t.server)
 	for i := 0; i < t.maxConn; i++ {
-		_, err := t.lb.NextServer()
+		_, err := t.lb.NextServer(context.Background())
 		if err != nil {
 			return err
 		}
 	}
 
-	if _, err := t.lb.NextServer(); err != loadbalancer.ErrNoServerAvailable {
+	if _, err := t.lb.NextServer(context.Background()); err != loadbalancer.ErrNoServerAvailable {
 		return fmt.Errorf("expected \"no server available\" but got %v", err)
 	}
 
@@ -93,7 +93,7 @@ func (t *testMaxConn) theBackendServerHasAMaximumConnectionLimit(maxConn int) er
 
 func (t *testMaxConn) iUpdateTheMaximumConnections(newMaxConn int) error {
 	t.maxConn = newMaxConn
-	t.lb.NextServer() // ensure that len(s.connections) is 1
+	t.lb.NextServer(context.Background()) // ensure that len(s.connections) is 1
 	err := t.lb.UpdateServerMaxConn(t.id, t.maxConn)
 	t.lastError = err
 	return err
