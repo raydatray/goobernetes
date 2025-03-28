@@ -1,5 +1,7 @@
 package loadbalancer
 
+import "context"
+
 type RoundRobinLoadBalancer struct {
 	BaseLoadBalancer
 	current int
@@ -14,7 +16,7 @@ func NewRoundRobinLoadBalancer() LoadBalancer {
 	}
 }
 
-func (rr *RoundRobinLoadBalancer) NextServer() (Server, error) {
+func (rr *RoundRobinLoadBalancer) NextServer(ctx context.Context) (Server, error) {
 	rr.Lock()
 	defer rr.Unlock()
 
