@@ -23,6 +23,7 @@ type connectionPoolTest struct {
 
 func (t *connectionPoolTest) reset() {
 	t.lb = loadbalancer.NewRoundRobinLoadBalancer()
+	t.maxConn = 10
 	t.lastError = nil
 }
 
@@ -66,7 +67,10 @@ func (t *connectionPoolTest) aClientSendsARequest() error {
 	t.addServerToLB()
 	s, err := t.lb.NextServer(t.ctx)
 	t.lastError = err
-	t.serverHit = s.(*loadbalancer.ServerInstance)
+	srv, ok := s.(*loadbalancer.ServerInstance)
+	if ok {
+		t.serverHit = srv
+	}
 	return nil
 }
 
@@ -120,7 +124,7 @@ func initializeID023Scenario(ctx *godog.ScenarioContext) {
 		return ctx, nil
 	})
 
-	ctx.Step(`^the loadbalancer is running$`, test.theLoadBalancerIsRunning)
+	ctx.Step(`^the load balancer is running$`, test.theLoadBalancerIsRunning)
 	ctx.Step(`^the connection pool size is (\d+)$`, test.theConnectionPoolSizeIs)
 	ctx.Step(`^(\d+) connections are established$`, test.connectionsAreEstablished)
 	ctx.Step(`^a client sends a request$`, test.aClientSendsARequest)

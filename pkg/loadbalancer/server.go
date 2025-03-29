@@ -88,7 +88,7 @@ func (s *ServerInstance) GetHostPort() string {
 }
 
 func (s *ServerInstance) AcquireConnection() bool {
-	if len(s.connections) > len(s.ActiveConns) {
+	if s.ConnPoolSize > len(s.ActiveConns) {
 		s.ActiveConns <- struct{}{}
 		return true
 	}

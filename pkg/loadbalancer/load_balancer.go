@@ -111,8 +111,10 @@ func (b *BaseLoadBalancer) UpdateServerMaxConn(serverID string, maxConn int) err
 		if s.(*ServerInstance).ID == serverID {
 			s.(*ServerInstance).MaxConns = maxConn
 			close(s.(*ServerInstance).connections)
-			newChan := resizeChannel(s.(*ServerInstance).connections, maxConn)
-			s.(*ServerInstance).connections = newChan
+			newConnChan := resizeChannel(s.(*ServerInstance).connections, maxConn)
+			s.(*ServerInstance).connections = newConnChan
+			newActiveChan := resizeChannel(s.(*ServerInstance).ActiveConns, maxConn)
+			s.(*ServerInstance).ActiveConns = newActiveChan
 			return nil
 		}
 	}
