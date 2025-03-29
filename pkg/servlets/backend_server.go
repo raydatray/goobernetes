@@ -46,6 +46,7 @@ func (s *BackendServer) Start() error {
 				fmt.Fprintf(w, "%s: %s\n", name, strings.Join(values, ", "))
 			}
 		}),
+		Transport: t,
 	}
 
 	fmt.Printf("Starting backend server on port %d\n", s.config.Port)
