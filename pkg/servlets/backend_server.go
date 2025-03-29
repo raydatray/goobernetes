@@ -7,32 +7,25 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/raydatray/goobernetes/pkg/utils"
 )
 
 type BackendServer struct {
-	config utils.Config
+	port   int
 	server *http.Server
 }
 
-func NewBackendServer(config utils.Config) *BackendServer {
+func NewBackendServer(port int) *BackendServer {
 	return &BackendServer{
-		config: config,
+		port: port,
 	}
 }
 
 func (s *BackendServer) Start() error {
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.MaxIdleConns = s.config.ConnectionPoolSize
-	t.MaxConnsPerHost = s.config.Connections
-	t.MaxIdleConnsPerHost = s.config.ConnectionPoolSize
-	t.IdleConnTimeout = 90 * time.Second
 	s.server = &http.Server{
-		Addr: fmt.Sprintf(":%d", s.config.Port),
+		Addr: fmt.Sprintf(":%d", s.port),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("X-Backend-Server", fmt.Sprintf("backend-%d", s.config.Port))
-			fmt.Fprintf(w, "Backend Server Port: %d\n\n", s.config.Port)
+			w.Header().Set("X-Backend-Server", fmt.Sprintf("backend-%d", s.port))
+			fmt.Fprintf(w, "Backend Server Port: %d\n\n", s.port)
 
 			fmt.Fprintf(w, "Request Headers:\n")
 			headers := make([]string, 0, len(r.Header))
@@ -46,10 +39,14 @@ func (s *BackendServer) Start() error {
 				fmt.Fprintf(w, "%s: %s\n", name, strings.Join(values, ", "))
 			}
 		}),
-		Transport: t,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       90 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
-	fmt.Printf("Starting backend server on port %d\n", s.config.Port)
+	fmt.Printf("Starting backend server on port %d\n", s.port)
 	return s.server.ListenAndServe()
 }
 
