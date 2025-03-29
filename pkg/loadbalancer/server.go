@@ -61,7 +61,7 @@ func NewServerInstance(id string, host string, port int, maxConns int, connPoolS
 		return nil, fmt.Errorf("%w: %d", ErrInvalidMaxConns, maxConns)
 	}
 
-	if connPoolSize < 1 && connPoolSize <= maxConns {
+	if connPoolSize < 0 && connPoolSize <= maxConns {
 		return nil, fmt.Errorf("%w: %d", ErrInvalidConnPoolSize, connPoolSize)
 	}
 
