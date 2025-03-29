@@ -43,5 +43,5 @@ func (ip *IPHashLoadBalancer) NextServer(ctx context.Context) (Server, error) {
 	if selectedServer.Active && selectedServer.AcquireConnection() {
 		return selectedServer, nil
 	}
-	return nil, ErrNoServerAvailable
+	return nil, ErrServerNotAvailable
 }
