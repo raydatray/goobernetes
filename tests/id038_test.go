@@ -68,6 +68,7 @@ func (t *userInputValidationTest) iEnterTheFollowingServerDetails(table *godog.T
 		port,
 		max_connections,
 		weight,
+		0,
 	)
 
 	t.server = server

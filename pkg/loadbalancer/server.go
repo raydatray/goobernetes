@@ -13,6 +13,8 @@ var (
 	ErrInvalidIP               = errors.New("Invalid IP address")
 	ErrInvalidPort             = errors.New("Invalid port number")
 	ErrInvalidMaxConns         = errors.New("Invalid max connections")
+	ErrInvalidConnPoolSize     = errors.New("Invalid connection pool size")
+	ErrConnectionExhausted     = errors.New("connection pool exhausted")
 
 	serverNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
 )
@@ -24,17 +26,19 @@ type Server interface {
 }
 
 type ServerInstance struct {
-	ID          string
-	Host        string
-	Port        int
-	Active      bool
-	MaxConns    int
-	connections chan struct{}
+	ID           string
+	Host         string
+	Port         int
+	Active       bool
+	MaxConns     int
+	ConnPoolSize int
+	ActiveConns  chan struct{}
+	connections  chan struct{}
 }
 
 var _ Server = (*ServerInstance)(nil)
 
-func NewServerInstance(id string, host string, port int, maxConns int) (*ServerInstance, error) {
+func NewServerInstance(id string, host string, port int, maxConns int, connPoolSize int) (*ServerInstance, error) {
 	if len(id) < 1 || len(id) > 64 {
 		return nil, ErrInvalidServerNameLength
 	}
@@ -57,14 +61,26 @@ func NewServerInstance(id string, host string, port int, maxConns int) (*ServerI
 		return nil, fmt.Errorf("%w: %d", ErrInvalidMaxConns, maxConns)
 	}
 
-	return &ServerInstance{
-		ID:          id,
-		Host:        host,
-		Port:        port,
-		Active:      true,
-		MaxConns:    maxConns,
-		connections: make(chan struct{}, maxConns),
-	}, nil
+	if connPoolSize < 0 && connPoolSize <= maxConns {
+		return nil, fmt.Errorf("%w: %d", ErrInvalidConnPoolSize, connPoolSize)
+	}
+
+	s := &ServerInstance{
+		ID:           id,
+		Host:         host,
+		Port:         port,
+		Active:       true,
+		MaxConns:     maxConns,
+		ConnPoolSize: connPoolSize,
+		ActiveConns:  make(chan struct{}, maxConns),
+		connections:  make(chan struct{}, maxConns),
+	}
+
+	for range s.ConnPoolSize {
+		s.connections <- struct{}{}
+	}
+
+	return s, nil
 }
 
 func (s *ServerInstance) GetHostPort() string {
@@ -72,9 +88,14 @@ func (s *ServerInstance) GetHostPort() string {
 }
 
 func (s *ServerInstance) AcquireConnection() bool {
+	if s.ConnPoolSize > len(s.ActiveConns) {
+		s.ActiveConns <- struct{}{}
+		return true
+	}
 	success := false
 	select {
 	case s.connections <- struct{}{}:
+		s.ActiveConns <- struct{}{}
 		success = true
 	default:
 		success = false
@@ -83,8 +104,13 @@ func (s *ServerInstance) AcquireConnection() bool {
 }
 
 func (s *ServerInstance) ReleaseConnection() {
+	if len(s.ActiveConns) <= s.ConnPoolSize {
+		<-s.ActiveConns
+		return
+	}
 	select {
 	case <-s.connections:
+		<-s.ActiveConns
 	default:
 	}
 }

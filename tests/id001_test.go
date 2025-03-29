@@ -34,7 +34,7 @@ func (t *roundRobinTest) theFollowingBackendServersAreConfigured(table *godog.Ta
 		port, _ := strconv.Atoi(row.Cells[3].Value)
 		maxConn, _ := strconv.Atoi(row.Cells[4].Value)
 
-		server, err := loadbalancer.NewServerInstance(serverID, host, port, maxConn)
+		server, err := loadbalancer.NewServerInstance(serverID, host, port, maxConn, 0)
 		if err != nil {
 			return fmt.Errorf("failed to create server: %v", err)
 		}

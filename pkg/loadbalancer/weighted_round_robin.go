@@ -98,8 +98,8 @@ func (wrr *WeightedRoundRobinLoadBalancer) NextServer(ctx context.Context) (Serv
 
 var _ Server = (*WeightedServerInstance)(nil)
 
-func NewWeightedServerInstance(id string, host string, port int, maxConns int, weight int) (*WeightedServerInstance, error) {
-	ServerInstance, err := NewServerInstance(id, host, port, maxConns)
+func NewWeightedServerInstance(id string, host string, port int, maxConns int, weight int, connPoolSize int) (*WeightedServerInstance, error) {
+	ServerInstance, err := NewServerInstance(id, host, port, maxConns, connPoolSize)
 
 	if err != nil {
 		return nil, err

@@ -35,7 +35,7 @@ func (t *weightedRoundRobinTest) theFollowingBackendServersAreConfigured(table *
 		port, _ := strconv.Atoi(row.Cells[3].Value)
 		maxConn, _ := strconv.Atoi(row.Cells[4].Value)
 
-		server, err := loadbalancer.NewWeightedServerInstance(serverID, host, port, maxConn, weight)
+		server, err := loadbalancer.NewWeightedServerInstance(serverID, host, port, maxConn, weight, 0)
 		if err != nil {
 			return fmt.Errorf("failed to create server: %v", err)
 		}

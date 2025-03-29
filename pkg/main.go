@@ -31,9 +31,9 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			lb := loadbalancer.NewRoundRobinLoadBalancer()
 
-			server1, _ := loadbalancer.NewServerInstance("mcschool", "192.0.0.1", 8081, 5)
-			server2, _ := loadbalancer.NewServerInstance("g1-home-router", "192.0.0.2", 8082, 5)
-			server3, _ := loadbalancer.NewServerInstance("herroshima", "192.0.0.3", 8083, 5)
+			server1, _ := loadbalancer.NewServerInstance("mcschool", "192.0.0.1", 8081, 5, 0)
+			server2, _ := loadbalancer.NewServerInstance("g1-home-router", "192.0.0.2", 8082, 5, 0)
+			server3, _ := loadbalancer.NewServerInstance("herroshima", "192.0.0.3", 8083, 5, 0)
 
 			defaultBackends := []*loadbalancer.ServerInstance{
 				server1,

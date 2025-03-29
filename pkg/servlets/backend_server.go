@@ -39,6 +39,11 @@ func (s *BackendServer) Start() error {
 				fmt.Fprintf(w, "%s: %s\n", name, strings.Join(values, ", "))
 			}
 		}),
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       90 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	fmt.Printf("Starting backend server on port %d\n", s.port)
