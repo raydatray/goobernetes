@@ -31,7 +31,6 @@ func (r *RandomLoadBalancer) NextServer(ctx context.Context) (Server, error) {
 
 	for i := 0; i < r.attempts; i++ {
 		selectedServer := r.servers[r.random.IntN(len(r.servers))].(*ServerInstance)
-
 		if selectedServer.Active && selectedServer.AcquireConnection() {
 			return selectedServer, nil
 		}

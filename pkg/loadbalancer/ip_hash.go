@@ -40,9 +40,8 @@ func (ip *IPHashLoadBalancer) NextServer(ctx context.Context) (Server, error) {
 	hash := h.Sum32()
 
 	selectedServer := ip.servers[hash%uint32(len(ip.servers))].(*ServerInstance)
-
 	if selectedServer.Active && selectedServer.AcquireConnection() {
 		return selectedServer, nil
 	}
-	return nil, ErrServerNotAvailable
+	return nil, ErrNoServerAvailable
 }

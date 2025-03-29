@@ -10,15 +10,12 @@ import (
 	"github.com/raydatray/goobernetes/pkg/loadbalancer"
 	"github.com/raydatray/goobernetes/pkg/router"
 	"github.com/raydatray/goobernetes/pkg/servlets"
+	"github.com/raydatray/goobernetes/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
-type Config struct {
-	Port int
-}
-
 func main() {
-	var config Config
+	var config utils.Config
 
 	rootCmd := &cobra.Command{
 		Use:   "goobernetes",
@@ -31,9 +28,9 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			lb := loadbalancer.NewRoundRobinLoadBalancer()
 
-			server1, _ := loadbalancer.NewServerInstance("mcschool", "192.0.0.1", 8081, 5)
-			server2, _ := loadbalancer.NewServerInstance("g1-home-router", "192.0.0.2", 8082, 5)
-			server3, _ := loadbalancer.NewServerInstance("herroshima", "192.0.0.3", 8083, 5)
+			server1, _ := loadbalancer.NewServerInstance("mcschool", "192.0.0.1", 8081, 5, 0)
+			server2, _ := loadbalancer.NewServerInstance("g1-home-router", "192.0.0.2", 8082, 5, 0)
+			server3, _ := loadbalancer.NewServerInstance("herroshima", "192.0.0.3", 8083, 5, 0)
 
 			defaultBackends := []*loadbalancer.ServerInstance{
 				server1,
@@ -76,7 +73,7 @@ func main() {
 		Use:   "backend",
 		Short: "start a mock backend server instance",
 		Run: func(cmd *cobra.Command, args []string) {
-			srv := servlets.NewBackendServer(config.Port)
+			srv := servlets.NewBackendServer(config)
 
 			sigChan := make(chan os.Signal, 1)
 			signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -102,6 +99,8 @@ func main() {
 
 	for _, cmd := range []*cobra.Command{lbCmd, backendCmd} {
 		cmd.Flags().IntVarP(&config.Port, "port", "p", 8080, "port to run the server on")
+		cmd.Flags().IntVarP(&config.Connections, "connections", "c", 100, "maximum number of concurrent connections")
+		cmd.Flags().IntVarP(&config.ConnectionPoolSize, "connection-pool-size", "s", 10, "size of the connection pool")
 	}
 
 	rootCmd.AddCommand(lbCmd, backendCmd)

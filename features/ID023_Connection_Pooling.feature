@@ -27,4 +27,4 @@ Feature: Connection Pooling in Load Balancer
     And 2 connections are in use
     And the max connections limit is 2
     When a client sends a request
-    Then the request should fail with "connection pool exhausted" error
+    Then the request should fail with "no server available" error

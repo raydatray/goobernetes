@@ -39,7 +39,7 @@ func (t *testMaxConn) aBackendServerExistsWithAddressAndPort(id string, host str
 
 func (t *testMaxConn) iSetTheMaximumConnectionsForABackendServer(maxConn int) error {
 	t.maxConn = maxConn
-	server, err := loadbalancer.NewServerInstance(t.id, t.host, t.port, t.maxConn)
+	server, err := loadbalancer.NewServerInstance(t.id, t.host, t.port, t.maxConn, 0)
 	t.server = server
 	t.lastError = err
 	return err
@@ -70,7 +70,7 @@ func (t *testMaxConn) theBackendServerShouldAcceptConnectionsUpToTheLimit() erro
 
 func (t *testMaxConn) iTryToSetTheMaximumConnectionsForTheBackendServer(maxConn int) error {
 	t.maxConn = maxConn
-	_, err := loadbalancer.NewServerInstance(t.id, t.host, t.port, t.maxConn)
+	_, err := loadbalancer.NewServerInstance(t.id, t.host, t.port, t.maxConn, 0)
 	t.lastError = err
 	return nil
 }
@@ -84,7 +84,7 @@ func (t *testMaxConn) IShouldReceiveAnErrorMessage(errorMessage string) error {
 
 func (t *testMaxConn) theBackendServerHasAMaximumConnectionLimit(maxConn int) error {
 	t.maxConn = maxConn
-	server, err := loadbalancer.NewServerInstance(t.id, t.host, t.port, t.maxConn)
+	server, err := loadbalancer.NewServerInstance(t.id, t.host, t.port, t.maxConn, 0)
 	t.server = server
 	_ = t.lb.AddServer(t.server)
 	t.lastError = err
